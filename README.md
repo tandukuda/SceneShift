@@ -11,6 +11,10 @@ It lets you **kill or suspend background applications**, freeing CPU and RAM bef
 
 Think of it as switching into a new “performance scene” for your machine.
 
+<p align="center">
+  <img src="assets/demo.gif" alt="SceneShift Demo">
+</p>
+
 ---
 
 ## Table of Contents
