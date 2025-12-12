@@ -1,0 +1,64 @@
+theme:
+  base: "#232136"
+  surface: "#2a273f"
+  text: "#e0def4"
+  highlight: "#3e8fb0"
+  select: "#c4a7e7"
+  kill: "#eb6f92"
+  restore: "#9ccfd8"
+  warn: "#f6c177"
+
+hotkeys:
+  up: ["up", "k"]
+  down: ["down", "j"]
+  toggle: ["s", " "]
+  select_all: ["a"] # NEW: Select All
+  deselect_all: ["x"] # NEW: Deselect All
+  kill_mode: ["K"]
+  restore_mode: ["R"]
+  quit: ["q", "ctrl+c"]
+  help: ["?"]
+
+# NEW: Quick Select Presets
+# Pressing the 'key' will exclusively select the apps listed.
+presets:
+  - name: "Gaming"
+    key: "1"
+    apps:
+      [
+        "OneCommander",
+        "Flow Launcher",
+        "QuickLook",
+        "Adobe Creative Cloud",
+        "PowerToys",
+        "Dropbox",
+        "Google Drive",
+      ]
+
+  - name: "Rendering"
+    key: "2"
+    apps: ["OneCommander", "Flow Launcher", "QuickLook", "Adobe Creative Cloud"]
+
+# The Master List (Everything)
+apps:
+  - name: "OneCommander"
+    process_name: "OneCommander.exe, OneCommanderConnector.exe"
+    exec_path: "C:\\Program Files\\OneCommander\\OneCommander.exe"
+  - name: "Flow Launcher"
+    process_name: "Flow.Launcher.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\FlowLauncher\\Flow.Launcher.exe"
+  - name: "QuickLook"
+    process_name: "QuickLook.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\Programs\\QuickLook\\QuickLook.exe"
+  - name: "Adobe Creative Cloud"
+    process_name: "Creative Cloud.exe, Adobe Desktop Service.exe, CCXProcess.exe, CoreSync.exe, Creative Cloud Helper.exe, AdobeIPCBroker.exe, CCLibrary.exe, Creative Cloud UI Helper.exe, AdobeUpdateService.exe"
+    exec_path: "C:\\Program Files\\Adobe\\Adobe Creative Cloud\\ACC\\Creative Cloud.exe"
+  - name: "PowerToys"
+    process_name: "PowerToys.exe, PowerToys.ColorPickerUI.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\PowerToys\\PowerToys.exe"
+  - name: "Dropbox"
+    process_name: "Dropbox.exe"
+    exec_path: ""
+  - name: "Google Drive"
+    process_name: "GoogleDriveFS.exe"
+    exec_path: ""
