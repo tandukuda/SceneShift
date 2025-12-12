@@ -44,7 +44,7 @@ Think of it as switching into a new “performance scene” for your machine.
 ## 📥 Quick Start (Recommended)
 
 1. Go to the **Releases** page:  
-   https://github.com/tandukuda/sceneshift/releases  
+   https://github.com/tandukuda/SceneShift/releases  
 2. Download the latest `SceneShift.exe`  
 3. Create a folder for it (e.g., Desktop/SceneShift)  
 4. Place a `config.yaml` in the same folder (see example below)  
