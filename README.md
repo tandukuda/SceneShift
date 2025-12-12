@@ -82,15 +82,6 @@ rsrc -manifest sceneshift.manifest -ico icon.ico -o sceneshift.syso
 go build -o SceneShift.exe
 ```
 
-<details>
-<summary><b>Optional: Dependency List</b></summary>
-
-```bash
-rsrc -manifest sceneshift.manifest -ico icon.ico -o sceneshift.syso
-go build -o SceneShift.exe
-```
-</details>
-
 ## ⚙️ Configuration (```config.yaml```)
 Whether you download or build the app, you need a ```config.yaml``` file in the same folder as the ```.exe```.
 
