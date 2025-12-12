@@ -1,6 +1,10 @@
-# SceneShift 🎮🚀
+<p align="center">
+  <img src="assets/logo.png" width="120" alt="SceneShift Logo">
+</p>
 
-![Language](https://img.shields.io/badge/language-Go-00ADD8.svg)  ![Platform](https://img.shields.io/badge/platform-Windows-blue)  ![License](https://img.shields.io/badge/license-MIT-green.svg)
+<h1 align="center">SceneShift 🎮🚀</h1>
+
+![Language](https://img.shields.io/badge/language-Go-00ADD8.svg)  ![Platform](https://img.shields.io/badge/platform-Windows-blue)  ![License](https://img.shields.io/badge/license-MIT-green.svg) 
 
 **SceneShift** is a terminal-first process optimizer built with Go and Bubble Tea.  
 It lets you **kill or suspend background applications**, freeing CPU and RAM before gaming or rendering — clean, fast, and zero-bloat.
@@ -185,6 +189,18 @@ sceneshift/
 ├── icon.ico
 └── README.md
 ```
+
+---
+
+## 🧰 Built With
+
+- **Go** — Core language powering SceneShift  
+- **Bubble Tea** — Terminal UI framework  
+- **Lipgloss** — Styling and layout  
+- **Bubbles** — Progress bars, keymaps, help components  
+- **gopsutil** — Process management engine  
+- **YAML v3** — Configuration handling  
+- **rsrc** — Icon & manifest embedding for Windows  
 
 ---
 
