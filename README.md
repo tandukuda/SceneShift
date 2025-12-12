@@ -65,7 +65,7 @@ Think of it as switching into a new “performance scene” for your machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/tandukuda/sceneshift.git
+git clone https://github.com/tandukuda/SceneShift.git
 cd sceneshift
 ```
 
