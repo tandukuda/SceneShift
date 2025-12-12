@@ -9,6 +9,19 @@ Think of it as switching into a new “performance scene” for your machine.
 
 ---
 
+## Table of Contents
+- [Features](#-features)
+- [Quick Start (Recommended)](#-quick-start-recommended)
+- [Build From Source](#-build-from-source)
+- [Configuration (`configyaml`)](#️-configuration-configyaml)
+- [How to Use](#-how-to-use)
+- [Project Structure](#-project-structure)
+- [Disclaimer](#-disclaimer)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
 ## ⚡ Features
 
 - **Smart Process Control** — Kill or suspend multiple apps with one toggle  
