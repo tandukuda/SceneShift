@@ -172,21 +172,6 @@ apps:
 
 ---
 
-## 📂 Project Structure
-
-```
-sceneshift/
-├── main.go               # Core TUI logic
-├── config.go             # YAML loader + validation
-├── process.go            # Kill / suspend / restore
-├── styles.go             # Lipgloss styling
-├── sceneshift.manifest   # Elevation + DPI config
-├── icon.ico
-└── README.md
-```
-
----
-
 ## 🧰 Built With
 
 - **Go** — Core language powering SceneShift  
