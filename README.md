@@ -23,7 +23,6 @@ Think of it as switching into a new “performance scene” for your machine.
 - [Build From Source](#-build-from-source)
 - [Configuration (`configyaml`)](#️-configuration-configyaml)
 - [How to Use](#-how-to-use)
-- [Project Structure](#-project-structure)
 - [Disclaimer](#-disclaimer)
 - [Contributing](#-contributing)
 - [License](#-license)
