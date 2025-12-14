@@ -161,12 +161,12 @@ apps:
 
 ## 🏃 How to Use
 
-- **Space** → Toggle select  
-- **A / X** → Select all / Deselect all  
+- **Space / s** → Toggle select  
+- **a / x** → Select all / Deselect all  
 - **K** → Kill Mode  
 - **R** → Restore Mode  
 - **1–9** → Apply presets  
-- **Q** → Quit  
+- **q** → Quit  
 - **?** → Help  
 
 ---
