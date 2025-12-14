@@ -21,7 +21,7 @@ Think of it as switching into a new “performance scene” for your machine.
 - [Features](#-features)
 - [Quick Start (Recommended)](#-quick-start-recommended)
 - [Build From Source](#-build-from-source)
-- [Configuration (`configyaml`)](#️-configuration-configyaml)
+- [Configuration](#️-configuration-configyaml)
 - [How to Use](#-how-to-use)
 - [Disclaimer](#-disclaimer)
 - [Contributing](#-contributing)
