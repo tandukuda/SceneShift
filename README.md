@@ -88,17 +88,6 @@ Whether you download or build the app, you need a ```config.yaml``` file in the 
 <summary><b>Full Default Configuration</b></summary>
 
 ```yaml
-# I'm using Rose Pine Moon for the default
-theme:
-  base: "#232136"
-  surface: "#2a273f"
-  text: "#e0def4"
-  highlight: "#3e8fb0"
-  select: "#c4a7e7"
-  kill: "#eb6f92"
-  restore: "#9ccfd8"
-  warn: "#f6c177"
-
 # Hotkey. You can change everything
 hotkeys:
   up: ["up", "k"]
