@@ -1,0 +1,9 @@
+#Catppuccin Mocha
+base: "#1e1e2e"
+surface: "#313244"
+text: "#cdd6f4"
+highlight: "#89b4fa" # Blue
+select: "#f5c2e7" # Pink
+kill: "#f38ba8" # Red
+restore: "#a6e3a1" # Green
+warn: "#fab387" # Peach

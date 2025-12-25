@@ -1,0 +1,9 @@
+#Nord
+base: "#2e3440"
+surface: "#3b4252"
+text: "#d8dee9"
+highlight: "#88c0d0" # Frost Blue
+select: "#81a1c1" # Frost Blue darker
+kill: "#bf616a" # Aurora Red
+restore: "#a3be8c" # Aurora Green
+warn: "#ebcb8b" # Aurora Yellow
