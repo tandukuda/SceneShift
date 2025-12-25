@@ -1,14 +1,3 @@
-# I'm using Rose Pine Moon for the default
-theme:
-  base: "#232136"
-  surface: "#2a273f"
-  text: "#e0def4"
-  highlight: "#3e8fb0"
-  select: "#c4a7e7"
-  kill: "#eb6f92"
-  restore: "#9ccfd8"
-  warn: "#f6c177"
-
 # Hotkey. You can change everything
 hotkeys:
   up: ["up", "k"]
@@ -48,19 +37,19 @@ apps:
     exec_path: "C:\\Program Files\\OneCommander\\OneCommander.exe"
   - name: "Flow Launcher"
     process_name: "Flow.Launcher.exe"
-    exec_path: "C:\\Users\\user\\AppData\\Local\\FlowLauncher\\Flow.Launcher.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\FlowLauncher\\Flow.Launcher.exe"
   - name: "QuickLook"
     process_name: "QuickLook.exe"
-    exec_path: "C:\\Users\\user\\AppData\\Local\\Programs\\QuickLook\\QuickLook.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\Programs\\QuickLook\\QuickLook.exe"
   - name: "Adobe Creative Cloud"
     process_name: "Creative Cloud.exe, Adobe Desktop Service.exe, CCXProcess.exe, CoreSync.exe, Creative Cloud Helper.exe, AdobeIPCBroker.exe, CCLibrary.exe, Creative Cloud UI Helper.exe, AdobeUpdateService.exe"
     exec_path: "C:\\Program Files\\Adobe\\Adobe Creative Cloud\\ACC\\Creative Cloud.exe"
   - name: "PowerToys"
     process_name: "PowerToys.exe, PowerToys.ColorPickerUI.exe"
-    exec_path: "C:\\Users\\user\\AppData\\Local\\PowerToys\\PowerToys.exe"
+    exec_path: "C:\\Users\\Ridho Ibrahim\\AppData\\Local\\PowerToys\\PowerToys.exe"
   - name: "Dropbox"
     process_name: "Dropbox.exe"
-    exec_path: "" # Leave it blank if you want to start the app manually
+    exec_path: ""
   - name: "Google Drive"
     process_name: "GoogleDriveFS.exe"
     exec_path: ""

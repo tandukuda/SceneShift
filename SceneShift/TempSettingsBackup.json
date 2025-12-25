@@ -1,0 +1,26 @@
+{
+  "userSettings": {
+    "PC_DESKTOP-P696F58": {
+      "OCTaskmaster.Properties.Settings": {
+        "AutoScroll": "True",
+        "ClearCompleted": "False",
+        "CloseOnComplete": "True",
+        "ConcurrentJobs": "16",
+        "HideOnClose": "True",
+        "ShowJobDetailsPane": "True",
+        "TaskbarDisplayEnabled": "True",
+        "TaskmasterMode": "update",
+        "ThemeName": "Dark",
+        "WindowExpandedWidth": "800",
+        "WindowPlacement": ""
+      }
+    },
+    "roaming": {
+      "OCTaskmaster.Properties.Settings": {
+        "BringToFrontOnAdd": "True",
+        "KeepFileDates": "True",
+        "KeepFolderDate": "True"
+      }
+    }
+  }
+}

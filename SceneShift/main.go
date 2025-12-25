@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/process"
 	"gopkg.in/yaml.v3"
 )
@@ -126,26 +127,44 @@ type model struct {
 	progPercent float64
 	logs        []string
 
-	width  int
-	height int
+	// Stats
+	startRAM uint64 // <--- NEW: To store RAM before killing
+	width    int
+	height   int
 }
 
 // --- Init ---
 
 func loadConfig() (Config, error) {
+	// 1. Load main config (apps, hotkeys, presets)
 	f, err := os.ReadFile("config.yaml")
 	if err != nil {
-		return Config{}, err
+		return Config{}, fmt.Errorf("could not read config.yaml: %w", err)
 	}
 	var cfg Config
 	err = yaml.Unmarshal(f, &cfg)
-	return cfg, err
+	if err != nil {
+		return Config{}, fmt.Errorf("could not parse config.yaml: %w", err)
+	}
+
+	// 2. Load theme config (colors)
+	fTheme, err := os.ReadFile("theme.yaml")
+	if err != nil {
+		return Config{}, fmt.Errorf("could not read theme.yaml: %w", err)
+	}
+	// Unmarshal theme.yaml directly into the Theme struct field
+	err = yaml.Unmarshal(fTheme, &cfg.Theme)
+	if err != nil {
+		return Config{}, fmt.Errorf("could not parse theme.yaml: %w", err)
+	}
+
+	return cfg, nil
 }
 
 func initialModel() model {
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Error loading config.yaml: %v\n", err)
+		fmt.Printf("Error loading configuration: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -187,6 +206,15 @@ func initialModel() model {
 
 func (m model) Init() tea.Cmd {
 	return nil
+}
+
+// --- Helper: Get RAM in MB ---
+func getRAMUsageMB() uint64 {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return 0
+	}
+	return v.Used / 1024 / 1024
 }
 
 // --- Update ---
@@ -264,7 +292,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.countdown--
 				return m, tickCmd()
 			}
+			// Countdown Finished -> Start Processing
 			m.currentState = stateProcessing
+			m.startRAM = getRAMUsageMB() // <--- SNAPSHOT RAM HERE
 			return m, processCmd(m)
 		}
 
@@ -281,6 +311,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.progress.SetPercent(msg.percent)
 
 		if msg.done {
+			// Processing Finished -> Calculate Stats
+			if m.mode == "kill" {
+				endRAM := getRAMUsageMB()
+				if m.startRAM > endRAM {
+					freed := m.startRAM - endRAM
+					statMsg := fmt.Sprintf("🚀 RAM Reclaimed: %d MB", freed)
+					m.logs = append(m.logs, statMsg)
+				} else {
+					m.logs = append(m.logs, "✨ Process cleanup complete.")
+				}
+			}
+
 			m.currentState = stateDone
 			return m, cmd
 		}
@@ -439,8 +481,9 @@ func (m model) View() string {
 	switch m.currentState {
 	case stateMenu:
 		// --- LOGO SECTION ---
+		// MODIFIED: Using m.config.Theme.Kill instead of hardcoded hex code
 		logoStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#eb6f92")). // <--- PINK COLOR HERE
+			Foreground(lipgloss.Color(m.config.Theme.Kill)).
 			Bold(true).
 			MarginBottom(1)
 
