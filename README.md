@@ -1,3 +1,4 @@
+
 <p align="center">
   <img src="assets/logo.png" width="512" alt="SceneShift Logo">
 </p>
@@ -39,10 +40,16 @@ It lets you **kill or suspend background applications**, freeing CPU and RAM bef
 
 ## 📥 Quick Start
 
-1.  **Download:** Get the latest `SceneShift.zip` from the [Releases Page](https://github.com/tandukuda/SceneShift/releases).
-2.  **Install:** Extract the files (`SceneShift.exe`, `config.yaml`, `theme.yaml`) to a folder of your choice.
-3.  **Run:** Double-click `SceneShift.exe`.
-    * *Note: Windows will request Administrator access to manage processes.*
+1. **Download:** Get the latest release from the [Releases Page](https://github.com/tandukuda/SceneShift/releases).
+2. **Organize:** Create a new folder (e.g., `Documents/SceneShift`) and move `SceneShift.exe` inside.
+
+> ⚠️ Important: Do not run the app directly from your Desktop or Downloads! On the first run, SceneShift automatically generates config.yaml and theme.yaml. Keeping it in a separate folder ensures your files stay organized.
+
+3. **Run:** Double-click SceneShift.exe.
+
+> Windows will request Administrator access to manage processes.
+
+4. **Shortcut:** Right-click `SceneShift.exe` → Send to → Desktop (create shortcut) for quick access later.
 
 ---
 
