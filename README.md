@@ -63,7 +63,6 @@ hotkeys:
     - j
   toggle:
     - ' '
-    - ' '
   select_all:
     - a
   deselect_all:
@@ -102,17 +101,17 @@ warn: '#f6c177'
 | Navigate       | `↑` `↓` or `k` `j` | Scroll through the app list.                                     |
 | Toggle         | `Space`            | Select/Deselect an app.                                          |
 | Select         | `a`                | Select all visible apps.                                         |
-| Deselect All   | `K`                | Clear all current selections.                                    |
+| Deselect All   | `x`                | Clear all current selections.                                    |
 | Kill Mode      | `K`                | Terminate selected apps. Now displays **"RAM Reclaimed" stats**. |
 | Restore Mode   | `R`                | Relaunch apps (requires `exec_path`).                            |
 | Presets        | `1`-`9`            | Apply a saved preset.                                            |
 | Help           | `?`                | Toggle the help menu overlay.                                    |
-| New App        | `n`                | Adding a new app.                                                |
-| Edit App       | `e`                | Edit an existing app.                                            |
-| Delete App     | `d`                | Delete an existing app.                                          |
-| Theme Selector | `t`                | Choose or edit a theme.                                          |
-| Presets Editor | `p`                | Add or edit a presets.                                           |
-| Find an App    | `ctrl + f`         | Search a running apps inside Edit App.                           |
+| New App        | `n`                | Add a new app to the list.                                       |
+| Edit App       | `e`                | Edit the currently selected app.                                 |
+| Delete App     | `d`                | Remove the selected app.                                         |
+| Theme Selector | `t`                | Switch or edit themes live.                                      |
+| Presets Editor | `p`                | Add or edit presets.                                             |
+| Find an App    | `ctrl + f`         | Search running apps to add them quickly.                         |
 
 ## 🛠 Build From Source
 **Prerequisites:** Go 1.21+ and Windows OS.
@@ -122,7 +121,7 @@ git clone https://github.com/tandukuda/SceneShift.git
 cd SceneShift
 
 # 2. Install resource tool (for icon)
-go install https://github.com/akavel/rsrc@latest
+go install github.com/akavel/rsrc@latest
 
 # 3. Build with assets
 rsrc -manifest sceneshift.manifest -ico assets/icon.ico -o sceneshift.syso
