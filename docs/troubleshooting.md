@@ -11,7 +11,3 @@ If `config.yaml` or `theme.yaml` are not generated:
 ## App Not Restarting (Restore Mode)
 If pressing `R` does not reopen an app:
 * **Solution:** The app might be missing its `exec_path`. Use the **Edit (`e`)** function in the UI to manually add the file path to the executable (e.g., `C:\Program Files\Adobe\Photoshop.exe`).
-
-## App Not Closing (Quit Mode)
-If pressing `Q` does not close an app:
-* **Solution:** The app might be missing its `exec_path`. Use the **Edit (`e`)** function in the UI to manually add the file path to the executable (e.g., `C:\Program Files\Adobe\Photoshop.exe`).
