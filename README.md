@@ -3,15 +3,12 @@
 </p>
 
 <h1 align="center">SceneShift 🎮🚀</h1>
-
   
-  
-  [![Docs](https://img.shields.io/badge/docs-Read_the_Guide-2a273f?style=for-the-badge&logo=materialformkdocs&logoColor=c4a7e7)](https://tandukuda.github.io/SceneShift/)
-  [![Windows](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/tandukuda/SceneShift/releases)
-  [![Go](https://img.shields.io/badge/Written_in-Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
-  [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-
-  <br />
+[![Docs](https://img.shields.io/badge/docs-Read_the_Guide-2a273f?style=for-the-badge&logo=materialformkdocs&logoColor=c4a7e7)](https://tandukuda.github.io/SceneShift/)
+[![Latest Release](https://img.shields.io/github/v/release/tandukuda/SceneShift?style=for-the-badge&color=blue)](https://github.com/tandukuda/SceneShift/releases/latest)
+[![Windows](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/tandukuda/SceneShift/releases)
+[![Go](https://img.shields.io/badge/Written_in-Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
 **SceneShift** is a terminal-first process optimizer built with Go and Bubble Tea. 
 
