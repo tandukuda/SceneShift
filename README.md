@@ -1,145 +1,50 @@
+<div align="center">
 
-<p align="center">
-  <img src="assets/logo.png" width="512" alt="SceneShift Logo">
-</p>
+  <img src="assets/logo.png" alt="SceneShift Logo" width="120" />
 
 <h1 align="center">SceneShift 🎮🚀</h1>
 
-[![Latest Release](https://img.shields.io/github/v/release/tandukuda/SceneShift?style=for-the-badge&color=blue)](https://github.com/tandukuda/SceneShift/releases/latest)
-[![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
-[![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+  
+  
+  [![Docs](https://img.shields.io/badge/docs-Read_the_Guide-2a273f?style=for-the-badge&logo=materialformkdocs&logoColor=c4a7e7)](https://tandukuda.github.io/SceneShift/)
+  [![Windows](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/tandukuda/SceneShift/releases)
+  [![Go](https://img.shields.io/badge/Written_in-Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+  [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+  <br />
 
 **SceneShift** is a terminal-first process optimizer built with Go and Bubble Tea. 
 
 It lets you **kill or suspend background applications**, freeing CPU and RAM before gaming or rendering — clean, fast, and zero-bloat. Think of it as switching into a new “performance scene” for your machine.
 
-<p align="center">
-  <img src="assets/demo.gif" alt="SceneShift Demo">
-</p>
+  <img src="assets/demo.gif" alt="SceneShift Demo" width="100%" />
+
+</div>
 
 ---
 
-## ⚡ Features
+## 📖 Documentation
+**Want to learn more?**
+We have moved our detailed guides, configuration options, and advanced usage tricks to our documentation site.
 
-### 🚀 Core Optimization
-* **Smart Process Control:** Kill or suspend multiple apps with one toggle.
-* **⏸️ Suspend Mode:** Pause background apps (like Spotify or Chrome) to free up resources without closing them completely.
-* **📊 Snapshot RAM:** Get real-time feedback on exactly how much memory (MB/GB) was reclaimed after a kill command.
-
-### 🎨 Customization
-* **🎨 Modular Theming:** Visual settings are now separated into `theme.yaml`. Swap color schemes without breaking your app logic.
-* **📁 Presets:** Switch between "Gaming", "Rendering", or custom profiles with a single key.
-* **⌨️ Custom Hotkeys:** Fully remappable keybindings in `config.yaml`.
-
-### 🛡️ System Integration
-* **Admin Elevation:** Automatically requests permissions to manage system processes.
-* **Windows-Native:** optimized specifically for Windows process management APIs.
+👉 **[Click here to read the SceneShift Documentation](https://tandukuda.github.io/SceneShift/)**
 
 ---
 
-## 📥 Quick Start
+## ⚡ Quick Start
 
-1. **Download:** Get the latest release from the [Releases Page](https://github.com/tandukuda/SceneShift/releases).
-2. **Organize:** Create a new folder (e.g., `Documents/SceneShift`) and move `SceneShift.exe` inside.
+You don't need to install Go or compile anything to get started.
 
-> ⚠️ Important: Do not run the app directly from your Desktop or Downloads! On the first run, SceneShift automatically generates `config.yaml` and `theme.yaml`. Keeping it in a separate folder ensures your files stay organized.
+1.  **Download** the latest `.exe` from the **[Releases Page](https://github.com/tandukuda/SceneShift/releases)**.
+2.  **Move** the file to a folder (e.g., `Documents/SceneShift`).
+3.  **Run** `SceneShift.exe`.
+    * *Note: It will request Administrator permissions to manage your processes.*
 
-3. **Run:** Double-click `SceneShift.exe`.
-
-> Windows will request Administrator access to manage processes.
-
-4. **Shortcut:** Right-click `SceneShift.exe` → Send to → Desktop (create shortcut) for quick access later.
+That's it! Use the **Spacebar** to toggle apps and **K** to kill them.
 
 ---
 
-## ⚙️ Configuration
+## 🛡️ Safety & Disclaimer
+SceneShift interacts with system processes. While built with safety in mind, always save your work before using the "Kill" command.
 
-SceneShift now uses two YAML files to keep your logic and visuals separate.
-
-### 1. `config.yaml` (Logic & Apps)
-Define your hotkeys, presets, and the list of applications to manage.
-
-```yaml
-hotkeys:
-  up:
-    - up
-    - k
-  down:
-    - down
-    - j
-  toggle:
-    - ' '
-  select_all:
-    - a
-  deselect_all:
-    - x
-  kill_mode:
-    - K
-  restore_mode:
-    - R
-  quit:
-    - q
-    - ctrl+c
-  help:
-    - '?'
-presets: []
-apps: []
-```
-
-### 2. `theme.yaml` (Visuals)
-Customize the look and feel. Below is the default **Rose Pine Moon** configuration:
-```yaml
-name: Rose Pine Moon
-base: '#232136'
-surface: '#2a273f'
-text: '#e0def4'
-highlight: '#3e8fb0'
-select: '#c4a7e7'
-kill: '#eb6f92'
-restore: '#9ccfd8'
-warn: '#f6c177'
-```
-
-## 🏃 How to Use
-
-| Action         | Input              | Description                                                      |
-| -------------- | ------------------ | ---------------------------------------------------------------- |
-| Navigate       | `↑` `↓` or `k` `j` | Scroll through the app list.                                     |
-| Toggle         | `Space`            | Select/Deselect an app.                                          |
-| Select         | `a`                | Select all visible apps.                                         |
-| Deselect All   | `x`                | Clear all current selections.                                    |
-| Kill Mode      | `K`                | Terminate selected apps. Now displays **"RAM Reclaimed" stats**. |
-| Restore Mode   | `R`                | Relaunch apps (requires `exec_path`).                            |
-| Presets        | `1`-`9`            | Apply a saved preset.                                            |
-| Help           | `?`                | Toggle the help menu overlay.                                    |
-| New App        | `n`                | Add a new app to the list.                                       |
-| Edit App       | `e`                | Edit the currently selected app.                                 |
-| Delete App     | `d`                | Remove the selected app.                                         |
-| Theme Selector | `t`                | Switch or edit themes live.                                      |
-| Presets Editor | `p`                | Add or edit presets.                                             |
-| Find an App    | `ctrl + f`         | Search running apps to add them quickly.                         |
-
-## 🛠 Build From Source
-**Prerequisites:** Go 1.21+ and Windows OS.
-```bash
-# 1. Clone the repo
-git clone https://github.com/tandukuda/SceneShift.git
-cd SceneShift
-
-# 2. Install resource tool (for icon)
-go install github.com/akavel/rsrc@latest
-
-# 3. Build with assets
-rsrc -manifest sceneshift.manifest -ico assets/icon.ico -o sceneshift.syso
-go build -ldflags "-s -w" -o SceneShift.exe
-```
-
-## ⚠️ Disclaimer
-SceneShift interacts with system processes. While built with safety in mind, terminating essential system applications may cause instability. Always save your work before using Kill Mode.
-
-## 🤝 Contributing
-PRs are welcome! Check out the [Issues](https://github.com/tandukuda/SceneShift/issues) tab to see what we're working on.
-
-## 📄 License
 Distributed under the **MIT License**.
