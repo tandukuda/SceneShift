@@ -18,11 +18,11 @@ If you prefer to build it yourself, you will need **Go 1.21+** installed.
 
 ```bash
 # 1. Clone the repo
-git clone [https://github.com/tandukuda/SceneShift.git](https://github.com/tandukuda/SceneShift.git)
+git clone https://github.com/tandukuda/SceneShift.git
 cd SceneShift
 
 # 2. Install resource tool (for icon embedding)
-go install [github.com/akavel/rsrc@latest](https://github.com/akavel/rsrc@latest)
+go install github.com/akavel/rsrc@latest
 
 # 3. Build with assets
 rsrc -manifest sceneshift.manifest -ico assets/icon.ico -o sceneshift.syso
