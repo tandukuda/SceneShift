@@ -1,8 +1,22 @@
 # Installation
 
-## Quick Start (Recommended)
+SceneShift is built for **Windows 10 and 11**.
 
-The easiest way to get started is to download the pre-compiled binary.
+## Method 1: Scoop (Recommended)
+The easiest way to install and keep SceneShift updated is using the [Scoop](https://scoop.sh/) package manager.
+
+Open PowerShell and run:
+
+```powershell
+# 1. Add the bucket
+scoop bucket add tandukuda [https://github.com/tandukuda/scoop-bucket](https://github.com/tandukuda/scoop-bucket)
+
+# 2. Install SceneShift
+scoop install sceneshift
+```
+
+## Method 2: Manual Installation
+If you prefer not to use a package manager, you can run the standalone binary.
 
 1.  **Download:** Get the latest release from the [Releases Page](https://github.com/tandukuda/SceneShift/releases).
 2.  **Organize:** Create a new folder (e.g., `Documents/SceneShift`) and move `SceneShift.exe` inside.
@@ -12,8 +26,8 @@ The easiest way to get started is to download the pre-compiled binary.
     * *Note: Windows will request Administrator access to manage processes.*
 4.  **Shortcut:** Right-click `SceneShift.exe` → **Send to** → **Desktop (create shortcut)** for quick access later.
 
-## Build From Source
 
+## Method 3: Build From Source
 If you prefer to build it yourself, you will need **Go 1.21+** installed.
 
 ```bash
