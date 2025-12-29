@@ -1,6 +1,6 @@
-<div align="center">
-
-  <img src="assets/logo.png" alt="SceneShift Logo" width="120" />
+<p align="center">
+  <img src="assets/logo.png" width="512" alt="SceneShift Logo">
+</p>
 
 <h1 align="center">SceneShift 🎮🚀</h1>
 
