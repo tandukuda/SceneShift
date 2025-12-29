@@ -9,7 +9,7 @@ Open PowerShell and run:
 
 ```powershell
 # 1. Add the bucket
-scoop bucket add tandukuda [https://github.com/tandukuda/scoop-bucket](https://github.com/tandukuda/scoop-bucket)
+scoop bucket add tandukuda https://github.com/tandukuda/scoop-bucket
 
 # 2. Install SceneShift
 scoop install sceneshift
