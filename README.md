@@ -54,6 +54,17 @@ That's it! Use the **Spacebar** to toggle apps and **K** to kill them.
 
 ---
 
+## 🌍 As Seen In
+
+SceneShift has been featured in:
+
+* **[MajorGeeks](https://www.majorgeeks.com/files/details/sceneshift.html)** (Rated 5/5) — *"A Lean, Mean Process Killing Machine"*
+* **[Neowin](https://www.neowin.net/software/sceneshift-quickly-close-multiple-apps-at-once/)** — *"Quickly close multiple apps at once"*
+* **[Deskmodder](https://www.deskmodder.de/blog/2026/01/03/sceneshift-mehrere-programme-und-hintergrundanwendungen-auf-einmal-beenden/)** — *"End multiple programs and background applications at once"*
+* **[YouTube](https://www.youtube.com/watch?v=VB9lv18yqAI)** — *Video Tutorial by Vasudev Menon*
+
+---
+
 ## 🛡️ Safety & Disclaimer
 SceneShift interacts with system processes. While built with safety in mind, always save your work before using the "Kill" command.
 
