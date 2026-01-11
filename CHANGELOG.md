@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config validation on load
 - State management consistency
 
-## [2.0.0] - 2025-XX-XX
+## [2.0.0] - 2025-12-27
 
 ### Added
 - Initial public release
