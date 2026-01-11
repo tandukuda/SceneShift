@@ -3,13 +3,11 @@
 </p>
 
 <h1 align="center">SceneShift 🎮🚀</h1>
-
   
-  
-[![Latest Release](https://img.shields.io/github/v/release/tandukuda/sceneshift?style=for-the-badge)](https://github.com/tandukuda/sceneshift/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/tandukuda/sceneshift/total?style=for-the-badge)](https://github.com/tandukuda/sceneshift/releases)
-[![License](https://img.shields.io/github/license/tandukuda/sceneshift?style=for-the-badge)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/tandukuda/sceneshift/SceneShift?style=for-the-badge)](go.mod)
+[![Latest Release](https://img.shields.io/github/v/release/tandukuda/SceneShift?style=for-the-badge&color=blue)](https://github.com/tandukuda/SceneShift/releases/latest)
+[![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
+[![Platform](https://img.shields.io/badge/Platform-Windows-blue?style=for-the-badge&logo=windows)](https://www.microsoft.com/windows)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Configuration](#-configuration) • [Contributing](#-contributing)
 
