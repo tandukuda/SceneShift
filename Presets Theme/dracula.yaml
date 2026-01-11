@@ -1,9 +1,0 @@
-#Dracula
-base: "#282a36"
-surface: "#44475a"
-text: "#f8f8f2"
-highlight: "#8be9fd" # Cyan
-select: "#bd93f9" # Purple
-kill: "#ff5555" # Red
-restore: "#50fa7b" # Green
-warn: "#ffb86c" # Orange

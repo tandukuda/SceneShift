@@ -1,0 +1,5 @@
+#define IDI_ICON1 1
+
+IDI_ICON1 ICON "icon.ico"
+
+1 RT_MANIFEST "sceneshift.manifest"

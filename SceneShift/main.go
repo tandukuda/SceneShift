@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -22,6 +23,88 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	Version   = "2.1.0"
+	BuildDate = "unknown"
+	GitCommit = "unknown"
+)
+
+// --- Windows API for Suspend/Resume ---
+var (
+	kernel32             = syscall.NewLazyDLL("kernel32.dll")
+	ntdll                = syscall.NewLazyDLL("ntdll.dll")
+	procOpenProcess      = kernel32.NewProc("OpenProcess")
+	procCloseHandle      = kernel32.NewProc("CloseHandle")
+	procNtSuspendProcess = ntdll.NewProc("NtSuspendProcess")
+	procNtResumeProcess  = ntdll.NewProc("NtResumeProcess")
+)
+
+const (
+	PROCESS_SUSPEND_RESUME    = 0x0800
+	PROCESS_QUERY_INFORMATION = 0x0400
+)
+
+func openProcess(pid int32) (syscall.Handle, error) {
+	handle, _, err := procOpenProcess.Call(
+		uintptr(PROCESS_SUSPEND_RESUME|PROCESS_QUERY_INFORMATION),
+		0,
+		uintptr(pid),
+	)
+	if handle == 0 {
+		return 0, fmt.Errorf("failed to open process PID %d: %v", pid, err)
+	}
+	return syscall.Handle(handle), nil
+}
+
+func suspendProcess(pid int32) error {
+	handle, err := openProcess(pid)
+	if err != nil {
+		return err
+	}
+	defer procCloseHandle.Call(uintptr(handle))
+
+	ret, _, _ := procNtSuspendProcess.Call(uintptr(handle))
+	if ret != 0 {
+		return fmt.Errorf("NtSuspendProcess failed with status: 0x%X", ret)
+	}
+	return nil
+}
+
+func resumeProcess(pid int32) error {
+	handle, err := openProcess(pid)
+	if err != nil {
+		return err
+	}
+	defer procCloseHandle.Call(uintptr(handle))
+
+	ret, _, _ := procNtResumeProcess.Call(uintptr(handle))
+	if ret != 0 {
+		return fmt.Errorf("NtResumeProcess failed with status: 0x%X", ret)
+	}
+	return nil
+}
+
+// --- Windows Essential Processes Safelist ---
+var defaultSafelist = []string{
+	"System", "Registry", "smss.exe", "csrss.exe", "wininit.exe",
+	"services.exe", "lsass.exe", "svchost.exe", "winlogon.exe",
+	"dwm.exe", "explorer.exe", "sihost.exe", "taskhostw.exe",
+	"RuntimeBroker.exe", "StartMenuExperienceHost.exe",
+	"MsMpEng.exe", "SecurityHealthService.exe", "SgrmBroker.exe",
+	"audiodg.exe", "fontdrvhost.exe", "spoolsv.exe",
+	"SearchIndexer.exe", "dllhost.exe", "conhost.exe",
+}
+
+func isInSafelist(processName string, safelist []string) bool {
+	lower := strings.ToLower(processName)
+	for _, safe := range safelist {
+		if strings.EqualFold(safe, processName) || strings.EqualFold(safe, lower) {
+			return true
+		}
+	}
+	return false
+}
+
 // --- ASCII LOGO ---
 const logoASCII = `
    _____                     _____ __    _______
@@ -34,10 +117,11 @@ const logoASCII = `
 // --- Configuration ---
 
 type Config struct {
-	Theme   ThemeConfig    `yaml:"-"`
-	Hotkeys HotkeyConfig   `yaml:"hotkeys"`
-	Presets []PresetConfig `yaml:"presets"`
-	Apps    []AppEntry     `yaml:"apps"`
+	Theme    ThemeConfig    `yaml:"-"`
+	Hotkeys  HotkeyConfig   `yaml:"hotkeys"`
+	Presets  []PresetConfig `yaml:"presets"`
+	Apps     []AppEntry     `yaml:"apps"`
+	Safelist []string       `yaml:"safelist"`
 }
 
 type PresetConfig struct {
@@ -55,6 +139,7 @@ type ThemeConfig struct {
 	Select    string `yaml:"select"`
 	Kill      string `yaml:"kill"`
 	Restore   string `yaml:"restore"`
+	Suspend   string `yaml:"suspend"`
 	Warn      string `yaml:"warn"`
 }
 
@@ -65,49 +150,55 @@ type HotkeyConfig struct {
 	SelectAll   []string `yaml:"select_all"`
 	DeselectAll []string `yaml:"deselect_all"`
 	KillMode    []string `yaml:"kill_mode"`
+	SuspendMode []string `yaml:"suspend_mode"`
+	ResumeMode  []string `yaml:"resume_mode"`
 	RestoreMode []string `yaml:"restore_mode"`
 	Quit        []string `yaml:"quit"`
 	Help        []string `yaml:"help"`
 }
 
 type AppEntry struct {
-	Name        string `yaml:"name"`
-	ProcessName string `yaml:"process_name"`
-	ExecPath    string `yaml:"exec_path"`
-	Selected    bool   `yaml:"selected"`
+	Name        string         `yaml:"name"`
+	ProcessName string         `yaml:"process_name"`
+	ExecPath    string         `yaml:"exec_path"`
+	Selected    bool           `yaml:"selected"`
+	PIDs        map[int32]bool `yaml:"-"`
 }
 
 // --- Hardcoded Theme Presets ---
 var themePresets = []ThemeConfig{
-	{Name: "Rose Pine Moon", Base: "#232136", Surface: "#2a273f", Text: "#e0def4", Highlight: "#3e8fb0", Select: "#c4a7e7", Kill: "#eb6f92", Restore: "#9ccfd8", Warn: "#f6c177"},
-	{Name: "Dracula", Base: "#282a36", Surface: "#44475a", Text: "#f8f8f2", Highlight: "#bd93f9", Select: "#50fa7b", Kill: "#ff5555", Restore: "#8be9fd", Warn: "#ffb86c"},
-	{Name: "Nord", Base: "#2e3440", Surface: "#3b4252", Text: "#eceff4", Highlight: "#88c0d0", Select: "#81a1c1", Kill: "#bf616a", Restore: "#a3be8c", Warn: "#ebcb8b"},
-	{Name: "Gruvbox Dark", Base: "#282828", Surface: "#3c3836", Text: "#ebdbb2", Highlight: "#458588", Select: "#d79921", Kill: "#cc241d", Restore: "#98971a", Warn: "#d65d0e"},
-	{Name: "Cyberpunk", Base: "#000b1e", Surface: "#05162a", Text: "#00ff9f", Highlight: "#00b8ff", Select: "#fcee0a", Kill: "#ff003c", Restore: "#00ff9f", Warn: "#fcee0a"},
+	{Name: "Rose Pine Moon", Base: "#232136", Surface: "#2a273f", Text: "#e0def4", Highlight: "#3e8fb0", Select: "#c4a7e7", Kill: "#eb6f92", Restore: "#9ccfd8", Suspend: "#f6c177", Warn: "#ea9a97"},
+	{Name: "Dracula", Base: "#282a36", Surface: "#44475a", Text: "#f8f8f2", Highlight: "#bd93f9", Select: "#50fa7b", Kill: "#ff5555", Restore: "#8be9fd", Suspend: "#f1fa8c", Warn: "#ffb86c"},
+	{Name: "Nord", Base: "#2e3440", Surface: "#3b4252", Text: "#eceff4", Highlight: "#88c0d0", Select: "#81a1c1", Kill: "#bf616a", Restore: "#a3be8c", Suspend: "#ebcb8b", Warn: "#d08770"},
+	{Name: "Gruvbox Dark", Base: "#282828", Surface: "#3c3836", Text: "#ebdbb2", Highlight: "#458588", Select: "#d79921", Kill: "#cc241d", Restore: "#98971a", Suspend: "#fabd2f", Warn: "#d65d0e"},
+	{Name: "Cyberpunk", Base: "#000b1e", Surface: "#05162a", Text: "#00ff9f", Highlight: "#00b8ff", Select: "#fcee0a", Kill: "#ff003c", Restore: "#00ff9f", Suspend: "#bd00ff", Warn: "#fcee0a"},
 }
 
 // --- KeyMap ---
 
 type keyMap struct {
-	Up          key.Binding
-	Down        key.Binding
-	Toggle      key.Binding
-	SelectAll   key.Binding
-	DeselectAll key.Binding
-	Kill        key.Binding
-	Restore     key.Binding
-	Quit        key.Binding
-	Help        key.Binding
-	NewItem     key.Binding
-	EditItem    key.Binding
-	DeleteItem  key.Binding
-	SearchProc  key.Binding
-	ThemeMenu   key.Binding
-	PresetMenu  key.Binding
+	Up           key.Binding
+	Down         key.Binding
+	Toggle       key.Binding
+	SelectAll    key.Binding
+	DeselectAll  key.Binding
+	Kill         key.Binding
+	Suspend      key.Binding
+	Resume       key.Binding
+	Restore      key.Binding
+	Quit         key.Binding
+	Help         key.Binding
+	NewItem      key.Binding
+	EditItem     key.Binding
+	DeleteItem   key.Binding
+	SearchProc   key.Binding
+	ThemeMenu    key.Binding
+	PresetMenu   key.Binding
+	SafelistMenu key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Kill, k.Restore, k.Quit, k.Help}
+	return []key.Binding{k.Kill, k.Suspend, k.Resume, k.Restore, k.Quit, k.Help}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
@@ -115,8 +206,8 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.Up, k.Down, k.Toggle},
 		{k.SelectAll, k.DeselectAll},
 		{k.NewItem, k.EditItem, k.DeleteItem},
-		{k.Kill, k.Restore, k.Quit},
-		{k.ThemeMenu, k.PresetMenu, k.SearchProc},
+		{k.Kill, k.Suspend, k.Resume, k.Restore},
+		{k.ThemeMenu, k.PresetMenu, k.SafelistMenu},
 	}
 }
 
@@ -155,7 +246,8 @@ const (
 	stateThemeEditor
 	statePresetList
 	statePresetEdit
-	statePresetAppPicker // New State: Picker for Preset Apps
+	statePresetAppPicker
+	stateSafelistManager
 )
 
 type tickMsg time.Time
@@ -180,7 +272,11 @@ type model struct {
 	// Preset Logic
 	presetCursor     int
 	presetPickCursor int
-	tempPresetApps   map[string]bool // Tracks selection in the picker
+	tempPresetApps   map[string]bool
+
+	// Safelist Logic
+	safelistCursor int
+	safelistInput  textinput.Model
 
 	// List Logic
 	procList    list.Model
@@ -215,6 +311,11 @@ func loadConfig() (Config, bool, error) {
 	if err != nil {
 		return Config{}, false, fmt.Errorf("could not parse config.yaml: %w", err)
 	}
+
+	if len(cfg.Safelist) == 0 {
+		cfg.Safelist = defaultSafelist
+	}
+
 	loadTheme(&cfg)
 	return cfg, false, nil
 }
@@ -228,12 +329,15 @@ func createDefaultConfig() (Config, error) {
 			SelectAll:   []string{"a"},
 			DeselectAll: []string{"x"},
 			KillMode:    []string{"K"},
+			SuspendMode: []string{"S"},
+			ResumeMode:  []string{"U"},
 			RestoreMode: []string{"R"},
 			Quit:        []string{"q", "ctrl+c"},
 			Help:        []string{"?"},
 		},
-		Presets: []PresetConfig{},
-		Apps:    []AppEntry{},
+		Presets:  []PresetConfig{},
+		Apps:     []AppEntry{},
+		Safelist: defaultSafelist,
 	}
 
 	f, err := os.Create("config.yaml")
@@ -289,21 +393,24 @@ func initialModel() model {
 	}
 
 	keys := keyMap{
-		Up:          key.NewBinding(key.WithKeys(cfg.Hotkeys.Up...), key.WithHelp("↑/k", "up")),
-		Down:        key.NewBinding(key.WithKeys(cfg.Hotkeys.Down...), key.WithHelp("↓/j", "down")),
-		Toggle:      key.NewBinding(key.WithKeys(toggleKeys...), key.WithHelp("Space", "toggle")),
-		SelectAll:   key.NewBinding(key.WithKeys(cfg.Hotkeys.SelectAll...), key.WithHelp("a", "all")),
-		DeselectAll: key.NewBinding(key.WithKeys(cfg.Hotkeys.DeselectAll...), key.WithHelp("x", "none")),
-		Kill:        key.NewBinding(key.WithKeys(cfg.Hotkeys.KillMode...), key.WithHelp("K", "KILL")),
-		Restore:     key.NewBinding(key.WithKeys(cfg.Hotkeys.RestoreMode...), key.WithHelp("R", "RESTORE")),
-		Quit:        key.NewBinding(key.WithKeys(cfg.Hotkeys.Quit...), key.WithHelp("q", "quit")),
-		Help:        key.NewBinding(key.WithKeys(cfg.Hotkeys.Help...), key.WithHelp("?", "help")),
-		NewItem:     key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
-		EditItem:    key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
-		DeleteItem:  key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
-		SearchProc:  key.NewBinding(key.WithKeys("ctrl+f"), key.WithHelp("ctrl+f", "search running")),
-		ThemeMenu:   key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "theme")),
-		PresetMenu:  key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "presets")),
+		Up:           key.NewBinding(key.WithKeys(cfg.Hotkeys.Up...), key.WithHelp("↑/k", "up")),
+		Down:         key.NewBinding(key.WithKeys(cfg.Hotkeys.Down...), key.WithHelp("↓/j", "down")),
+		Toggle:       key.NewBinding(key.WithKeys(toggleKeys...), key.WithHelp("Space", "toggle")),
+		SelectAll:    key.NewBinding(key.WithKeys(cfg.Hotkeys.SelectAll...), key.WithHelp("a", "all")),
+		DeselectAll:  key.NewBinding(key.WithKeys(cfg.Hotkeys.DeselectAll...), key.WithHelp("x", "none")),
+		Kill:         key.NewBinding(key.WithKeys(cfg.Hotkeys.KillMode...), key.WithHelp("K", "KILL")),
+		Restore:      key.NewBinding(key.WithKeys(cfg.Hotkeys.RestoreMode...), key.WithHelp("R", "RESTORE")),
+		Quit:         key.NewBinding(key.WithKeys(cfg.Hotkeys.Quit...), key.WithHelp("q", "quit")),
+		Help:         key.NewBinding(key.WithKeys(cfg.Hotkeys.Help...), key.WithHelp("?", "help")),
+		NewItem:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
+		EditItem:     key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
+		DeleteItem:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
+		SearchProc:   key.NewBinding(key.WithKeys("ctrl+f"), key.WithHelp("ctrl+f", "search running")),
+		ThemeMenu:    key.NewBinding(key.WithKeys("t"), key.WithHelp("t", "theme")),
+		PresetMenu:   key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "presets")),
+		Suspend:      key.NewBinding(key.WithKeys(cfg.Hotkeys.SuspendMode...), key.WithHelp("S", "SUSPEND")),
+		Resume:       key.NewBinding(key.WithKeys(cfg.Hotkeys.ResumeMode...), key.WithHelp("U", "RESUME")),
+		SafelistMenu: key.NewBinding(key.WithKeys("w"), key.WithHelp("w", "safelist")),
 	}
 
 	prog := progress.New(
@@ -321,6 +428,10 @@ func initialModel() model {
 	sInput.Prompt = "🔍 Search: "
 	sInput.Placeholder = "Type to filter..."
 	sInput.Focus()
+
+	safeInput := textinput.New()
+	safeInput.Prompt = "➕ Add: "
+	safeInput.Placeholder = "processname.exe"
 
 	lProc := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	lProc.SetShowHelp(false)
@@ -353,6 +464,7 @@ func initialModel() model {
 		searchInput:   sInput,
 		procList:      lProc,
 		themeList:     lTheme,
+		safelistInput: safeInput,
 	}
 }
 
@@ -424,7 +536,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		// Global Quit (Context Aware)
-		safeStates := []state{stateMenu, statePresetList, stateThemePicker}
+		safeStates := []state{stateMenu, statePresetList, stateThemePicker, stateSafelistManager}
 		isSafe := false
 		for _, s := range safeStates {
 			if m.currentState == s {
@@ -477,6 +589,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.presetCursor = 0
 				return m, nil
 
+			case key.Matches(msg, m.keys.SafelistMenu):
+				m.currentState = stateSafelistManager
+				m.safelistCursor = 0
+				return m, nil
+
 			case key.Matches(msg, m.keys.DeleteItem):
 				if len(m.config.Apps) > 0 {
 					m.config.Apps = append(m.config.Apps[:m.cursor], m.config.Apps[m.cursor+1:]...)
@@ -519,6 +636,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					progress.WithWidth(40),
 				)
 				return m, tickCmd()
+			case key.Matches(msg, m.keys.Suspend):
+				m.mode = "suspend"
+				m.currentState = stateCountdown
+				m.countdown = 5
+				m.progress = progress.New(
+					progress.WithGradient(m.config.Theme.Suspend, m.config.Theme.Highlight),
+					progress.WithWidth(40),
+				)
+				return m, tickCmd()
+			case key.Matches(msg, m.keys.Resume):
+				m.mode = "resume"
+				m.currentState = stateCountdown
+				m.countdown = 5
+				m.progress = progress.New(
+					progress.WithGradient(m.config.Theme.Restore, m.config.Theme.Highlight),
+					progress.WithWidth(40),
+				)
+				return m, tickCmd()
+			case key.Matches(msg, m.keys.SafelistMenu):
+				m.currentState = stateSafelistManager
+				m.safelistCursor = 0
+				return m, nil
+
 			}
 
 		case statePresetList:
@@ -676,6 +816,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.currentState = statePresetEdit
 				return m, nil
 			}
+
+		case stateSafelistManager:
+			var cmd tea.Cmd
+			switch {
+			case key.Matches(msg, m.keys.Quit), msg.String() == "esc":
+				m.currentState = stateMenu
+				return m, nil
+			case key.Matches(msg, m.keys.Up):
+				if m.safelistCursor > 0 {
+					m.safelistCursor--
+				}
+			case key.Matches(msg, m.keys.Down):
+				if m.safelistCursor < len(m.config.Safelist)-1 {
+					m.safelistCursor++
+				}
+			case key.Matches(msg, m.keys.DeleteItem):
+				if len(m.config.Safelist) > 0 {
+					m.config.Safelist = append(m.config.Safelist[:m.safelistCursor], m.config.Safelist[m.safelistCursor+1:]...)
+					if m.safelistCursor >= len(m.config.Safelist) && m.safelistCursor > 0 {
+						m.safelistCursor--
+					}
+					m.saveConfig()
+				}
+			case msg.String() == "enter":
+				newProc := strings.TrimSpace(m.safelistInput.Value())
+				if newProc != "" {
+					m.config.Safelist = append(m.config.Safelist, newProc)
+					m.safelistInput.SetValue("")
+					m.saveConfig()
+				}
+			default:
+				m.safelistInput, cmd = m.safelistInput.Update(msg)
+				return m, cmd
+			}
+			return m, nil
 
 		case stateAppEdit:
 			if key.Matches(msg, m.keys.SearchProc) {
@@ -984,15 +1159,40 @@ func waitForNextProcess(m model, index int) tea.Cmd {
 			}
 		}
 
+		// Check safelist
+		if isInSafelist(app.ProcessName, m.config.Safelist) {
+			return processResultMsg{
+				message: fmt.Sprintf("[SAFE] %s is protected", app.Name),
+				percent: percent,
+				done:    false,
+				index:   index,
+			}
+		}
+
 		var msg string
-		if m.mode == "kill" {
+		switch m.mode {
+		case "kill":
 			err := killProcess(app.ProcessName)
 			if err != nil {
-				msg = fmt.Sprintf("[ERR]  %v", err)
+				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
 			} else {
 				msg = fmt.Sprintf("[KILL] Terminated %s", app.Name)
 			}
-		} else {
+		case "suspend":
+			err := suspendProcessByName(app.ProcessName)
+			if err != nil {
+				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+			} else {
+				msg = fmt.Sprintf("[SUSP] Suspended %s", app.Name)
+			}
+		case "resume":
+			err := resumeProcessByName(app.ProcessName)
+			if err != nil {
+				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+			} else {
+				msg = fmt.Sprintf("[RESM] Resumed %s", app.Name)
+			}
+		case "restore":
 			err := startProcess(app.ProcessName, app.ExecPath)
 			if err != nil {
 				msg = fmt.Sprintf("[ERR]  Could not start %s", app.Name)
@@ -1002,6 +1202,76 @@ func waitForNextProcess(m model, index int) tea.Cmd {
 		}
 		return processResultMsg{message: msg, percent: percent, done: false, index: index}
 	}
+}
+
+func suspendProcessByName(rawNames string) error {
+	procs, err := process.Processes()
+	if err != nil {
+		return err
+	}
+	targets := strings.Split(rawNames, ",")
+	for i := range targets {
+		targets[i] = strings.TrimSpace(targets[i])
+	}
+	var lastErr error
+	suspendedCount := 0
+	for _, p := range procs {
+		n, err := p.Name()
+		if err != nil {
+			continue
+		}
+		for _, t := range targets {
+			if strings.EqualFold(n, t) {
+				if err := suspendProcess(p.Pid); err != nil {
+					lastErr = err
+				} else {
+					suspendedCount++
+				}
+			}
+		}
+	}
+	if suspendedCount > 0 {
+		return nil
+	}
+	if lastErr != nil {
+		return lastErr
+	}
+	return fmt.Errorf("no processes found")
+}
+
+func resumeProcessByName(rawNames string) error {
+	procs, err := process.Processes()
+	if err != nil {
+		return err
+	}
+	targets := strings.Split(rawNames, ",")
+	for i := range targets {
+		targets[i] = strings.TrimSpace(targets[i])
+	}
+	var lastErr error
+	resumedCount := 0
+	for _, p := range procs {
+		n, err := p.Name()
+		if err != nil {
+			continue
+		}
+		for _, t := range targets {
+			if strings.EqualFold(n, t) {
+				if err := resumeProcess(p.Pid); err != nil {
+					lastErr = err
+				} else {
+					resumedCount++
+				}
+			}
+		}
+	}
+	if resumedCount > 0 {
+		return nil
+	}
+	if lastErr != nil {
+		return lastErr
+	}
+	return fmt.Errorf("no processes found")
 }
 
 func killProcess(rawNames string) error {
@@ -1157,6 +1427,30 @@ func (m model) View() string {
 		}
 		s += lipgloss.NewStyle().Faint(true).Render("\n(Space to Toggle, Enter to Confirm, Esc to Cancel)")
 
+	case stateSafelistManager:
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
+		s += titleStyle.Render("SAFELIST MANAGER") + "\n\n"
+		s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("Protected processes that cannot be killed or suspended:") + "\n\n"
+
+		if len(m.config.Safelist) == 0 {
+			s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("No processes in safelist.") + "\n"
+		} else {
+			for i, proc := range m.config.Safelist {
+				cursor := "  "
+				if m.safelistCursor == i {
+					cursor = "> "
+				}
+				label := fmt.Sprintf("%s%s", cursor, proc)
+				if m.safelistCursor == i {
+					s += selected.Render(label) + "\n"
+				} else {
+					s += unselected.Render(label) + "\n"
+				}
+			}
+		}
+		s += "\n" + m.safelistInput.View() + "\n"
+		s += lipgloss.NewStyle().Faint(true).Render("\n(Enter to Add, d: delete, esc: back)")
+
 	case stateAppEdit:
 		title := "EDIT APP"
 		if m.isNewItem {
@@ -1200,10 +1494,17 @@ func (m model) View() string {
 
 	case stateCountdown:
 		var modeStr string
-		if m.mode == "kill" {
+		suspendStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Suspend)).Bold(true)
+
+		switch m.mode {
+		case "kill":
 			modeStr = killStyle.Render("KILLING APPS")
-		} else {
-			modeStr = restoreStyle.Render("RESTORING APPS")
+		case "suspend":
+			modeStr = suspendStyle.Render("SUSPENDING APPS")
+		case "resume":
+			modeStr = restoreStyle.Render("RESUMING APPS")
+		default:
+			modeStr = restoreStyle.Render("LAUNCHING APPS")
 		}
 		s += fmt.Sprintf("\n   %s IN...\n\n", modeStr)
 		bigNum := lipgloss.NewStyle().Bold(true).Padding(1, 3).Foreground(lipgloss.Color(m.config.Theme.Warn)).Render(fmt.Sprintf("%d", m.countdown))
@@ -1212,10 +1513,17 @@ func (m model) View() string {
 
 	case stateProcessing, stateDone:
 		var modeStr string
-		if m.mode == "kill" {
+		suspendStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Suspend)).Bold(true)
+
+		switch m.mode {
+		case "kill":
 			modeStr = killStyle.Render("KILLING...")
-		} else {
-			modeStr = restoreStyle.Render("RESTORING...")
+		case "suspend":
+			modeStr = suspendStyle.Render("SUSPENDING...")
+		case "resume":
+			modeStr = restoreStyle.Render("RESUMING...")
+		default:
+			modeStr = restoreStyle.Render("LAUNCHING...")
 		}
 		s += modeStr + "\n\n"
 		s += m.progress.View() + "\n\n"
@@ -1236,9 +1544,70 @@ func (m model) View() string {
 }
 
 func main() {
+	// Handle version flag
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "--version", "-v", "version":
+			fmt.Printf("╭─────────────────────────────────╮\n")
+			fmt.Printf("│   SceneShift v%-18s│\n", Version)
+			fmt.Printf("│   Built: %-23s│\n", BuildDate)
+			if GitCommit != "unknown" {
+				fmt.Printf("│   Commit: %-22s│\n", GitCommit[:7])
+			}
+			fmt.Printf("│   Platform: Windows             │\n")
+			fmt.Printf("│   License: MIT                  │\n")
+			fmt.Printf("│   Author: tandukuda             │\n")
+			fmt.Printf("╰─────────────────────────────────╯\n")
+			os.Exit(0)
+		case "--help", "-h", "help":
+			printHelp()
+			os.Exit(0)
+		}
+	}
+
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running program: %v", err)
 		os.Exit(1)
 	}
+}
+
+func printHelp() {
+	fmt.Printf(`SceneShift v%s - Terminal Process Manager
+
+USAGE:
+    SceneShift.exe [OPTIONS]
+
+OPTIONS:
+    --version, -v       Show version information
+    --help, -h          Show this help message
+
+RUNNING:
+    Simply run 'SceneShift.exe' to start the TUI interface
+
+KEYBINDINGS (in TUI):
+    K                   Kill selected processes
+    S                   Suspend selected processes
+    U                   Resume suspended processes
+    R                   Launch/Restore processes
+
+    Space               Toggle selection
+    a                   Select all
+    x                   Deselect all
+
+    n                   New app entry
+    e                   Edit selected app
+    d                   Delete selected app
+
+    p                   Manage presets
+    t                   Change theme
+    w                   Manage safelist
+
+    ?                   Toggle help
+    q                   Quit
+
+DOCUMENTATION:
+    https://github.com/tandukuda/SceneShift
+
+`, Version)
 }
