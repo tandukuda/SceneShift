@@ -9,7 +9,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/tandukuda/sceneshift?style=for-the-badge)](https://github.com/tandukuda/sceneshift/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/tandukuda/sceneshift/total?style=for-the-badge)](https://github.com/tandukuda/sceneshift/releases)
 [![License](https://img.shields.io/github/license/tandukuda/sceneshift?style=for-the-badge)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/tandukuda/sceneshift?style=for-the-badge)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/tandukuda/sceneshift/SceneShift?style=for-the-badge)](go.mod)
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Configuration](#-configuration) • [Contributing](#-contributing)
 
@@ -91,6 +91,11 @@ SceneShift has been featured in:
 * **[Neowin](https://www.neowin.net/software/sceneshift-quickly-close-multiple-apps-at-once/)** — *"Quickly close multiple apps at once"*
 * **[Deskmodder](https://www.deskmodder.de/blog/2026/01/03/sceneshift-mehrere-programme-und-hintergrundanwendungen-auf-einmal-beenden/)** — *"End multiple programs and background applications at once"*
 * **[YouTube](https://www.youtube.com/watch?v=VB9lv18yqAI)** — *Video Tutorial by Vasudev Menon*
+
+---
+
+## 🛡️ Safety & Disclaimer
+SceneShift interacts with system processes. While built with safety in mind, always save your work before using the "Kill" command.
 
 ---
 
