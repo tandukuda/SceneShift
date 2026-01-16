@@ -191,7 +191,13 @@ If SceneShift is part of your workflow, sponsorship helps keep it **fast, safe, 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
+<div align="center">
 
-Built with Bubble Tea by Charm  
-Process lists curated by the community  
+Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) by Charm
+
+Process lists curated by the community 
+
 **Built with ❤️ by [tandukuda](https://github.com/tandukuda)**
+
+[⭐ Star this repo](https://github.com/tandukuda/sceneshift) • [🐛 Report Bug](https://github.com/tandukuda/sceneshift/issues) • [💡 Request Feature](https://github.com/tandukuda/sceneshift/issues) [☕ Ko-Fi](https://ko-fi.com/tandukuda)
+</div>
