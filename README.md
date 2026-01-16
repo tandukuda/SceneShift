@@ -199,5 +199,5 @@ Process lists curated by the community
 
 **Built with ❤️ by [tandukuda](https://github.com/tandukuda)**
 
-[⭐ Star this repo](https://github.com/tandukuda/sceneshift) • [🐛 Report Bug](https://github.com/tandukuda/sceneshift/issues) • [💡 Request Feature](https://github.com/tandukuda/sceneshift/issues) [☕ Ko-Fi](https://ko-fi.com/tandukuda)
+[⭐ Star this repo](https://github.com/tandukuda/sceneshift) • [🐛 Report Bug](https://github.com/tandukuda/sceneshift/issues) • [💡 Request Feature](https://github.com/tandukuda/sceneshift/issues) • [☕ Ko-Fi](https://ko-fi.com/tandukuda)
 </div>
