@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	Version   = "2.1.0"
+	Version   = "2.1.1"
 	BuildDate = "unknown"
 	GitCommit = "unknown"
 )
@@ -105,6 +105,116 @@ func isInSafelist(processName string, safelist []string) bool {
 	return false
 }
 
+// --- Default Lists for v2.1.1 ---
+
+func getDefaultProtectionList() []string {
+	return []string{
+		// Critical Windows Processes
+		"System", "Registry", "smss.exe", "csrss.exe", "wininit.exe",
+		"services.exe", "lsass.exe", "svchost.exe", "winlogon.exe",
+		"dwm.exe", "explorer.exe", "sihost.exe", "taskhostw.exe",
+		"RuntimeBroker.exe", "StartMenuExperienceHost.exe",
+		// Security & System
+		"MsMpEng.exe", "SecurityHealthService.exe", "SgrmBroker.exe",
+		"audiodg.exe", "fontdrvhost.exe", "spoolsv.exe",
+		"SearchIndexer.exe", "dllhost.exe", "conhost.exe",
+		"ctfmon.exe", "taskmgr.exe", "SystemSettings.exe",
+	}
+}
+
+func getDefaultSafeToKill() SafeToKillConfig {
+	return SafeToKillConfig{
+		Bloatware: []string{
+			"OneDrive.exe", "OneDriveSetup.exe", "msedge.exe",
+			"MicrosoftEdgeUpdate.exe", "WidgetService.exe",
+			"GameBarPresenceWriter.exe", "YourPhone.exe",
+			"PhoneExperienceHost.exe", "cortana.exe",
+			"SearchApp.exe", "StartMenuExperienceHost.exe",
+			"TextInputHost.exe",
+		},
+		ChatApps: []string{
+			"Discord.exe", "Slack.exe", "Teams.exe", "Zoom.exe",
+			"Skype.exe", "WhatsApp.exe", "Telegram.exe", "msteams.exe",
+		},
+		GameLaunchers: []string{
+			"Steam.exe", "EpicGamesLauncher.exe", "Battle.net.exe",
+			"RiotClientServices.exe", "upc.exe", "Origin.exe",
+			"GalaxyClient.exe", "Rockstar Games Launcher.exe",
+		},
+		Utilities: []string{
+			"Spotify.exe", "SpotifyWebHelper.exe", "iTunes.exe",
+			"AppleMobileDeviceService.exe", "CCXProcess.exe",
+			"Creative Cloud.exe", "AdobeNotificationClient.exe",
+			"NVIDIA Share.exe", "nvcontainer.exe", "GeForceExperience.exe",
+			"RadeonSoftware.exe", "LightingService.exe", "iCUE.exe",
+			"RzSDKService.exe",
+		},
+	}
+}
+
+// detectSafetyLevel determines if a process is protected, safe, or caution
+func detectSafetyLevel(processName string, cfg *Config) string {
+	pLower := strings.ToLower(processName)
+
+	// Check if protected (in exclusion list)
+	for _, protected := range cfg.Protection.ExclusionList {
+		if strings.EqualFold(protected, processName) {
+			return "protected"
+		}
+	}
+
+	// Check if in safe-to-kill lists
+	allSafe := append(cfg.SafeToKill.Bloatware, cfg.SafeToKill.ChatApps...)
+	allSafe = append(allSafe, cfg.SafeToKill.GameLaunchers...)
+	allSafe = append(allSafe, cfg.SafeToKill.Utilities...)
+
+	for _, safe := range allSafe {
+		if strings.EqualFold(safe, processName) {
+			return "safe"
+		}
+	}
+
+	// System-critical keywords indicate caution
+	criticalKeywords := []string{"system", "service", "driver", "windows", "microsoft"}
+	for _, keyword := range criticalKeywords {
+		if strings.Contains(pLower, keyword) {
+			return "caution"
+		}
+	}
+
+	return "caution" // Default to caution for unknown processes
+}
+
+// migrateOldConfig handles backward compatibility from v2.1.0 to v2.1.1
+func migrateOldConfig(cfg *Config) bool {
+	migrated := false
+
+	// Migrate old "Safelist" to new "Protection.ExclusionList"
+	if len(cfg.Protection.ExclusionList) == 0 {
+		cfg.Protection.ExclusionList = getDefaultProtectionList()
+		migrated = true
+	}
+
+	// Add safe-to-kill lists if empty
+	if len(cfg.SafeToKill.Bloatware) == 0 &&
+		len(cfg.SafeToKill.ChatApps) == 0 &&
+		len(cfg.SafeToKill.GameLaunchers) == 0 &&
+		len(cfg.SafeToKill.Utilities) == 0 {
+		cfg.SafeToKill = getDefaultSafeToKill()
+		migrated = true
+	}
+
+	// Auto-detect safety levels for existing apps
+	for i := range cfg.Apps {
+		if cfg.Apps[i].SafetyLevel == "" {
+			cfg.Apps[i].SafetyLevel = detectSafetyLevel(cfg.Apps[i].ProcessName, cfg)
+			migrated = true
+		}
+	}
+
+	return migrated
+}
+
 // --- ASCII LOGO ---
 const logoASCII = `
    _____                     _____ __    _______
@@ -117,11 +227,23 @@ const logoASCII = `
 // --- Configuration ---
 
 type Config struct {
-	Theme    ThemeConfig    `yaml:"-"`
-	Hotkeys  HotkeyConfig   `yaml:"hotkeys"`
-	Presets  []PresetConfig `yaml:"presets"`
-	Apps     []AppEntry     `yaml:"apps"`
-	Safelist []string       `yaml:"safelist"`
+	Theme      ThemeConfig      `yaml:"-"`
+	Hotkeys    HotkeyConfig     `yaml:"hotkeys"`
+	Presets    []PresetConfig   `yaml:"presets"`
+	Apps       []AppEntry       `yaml:"apps"`
+	Protection ProtectionConfig `yaml:"protection"`
+	SafeToKill SafeToKillConfig `yaml:"safe_to_kill"`
+}
+
+type ProtectionConfig struct {
+	ExclusionList []string `yaml:"exclusion_list"`
+}
+
+type SafeToKillConfig struct {
+	Bloatware     []string `yaml:"bloatware"`
+	ChatApps      []string `yaml:"chat_apps"`
+	GameLaunchers []string `yaml:"game_launchers"`
+	Utilities     []string `yaml:"utilities"`
 }
 
 type PresetConfig struct {
@@ -162,6 +284,7 @@ type AppEntry struct {
 	ProcessName string         `yaml:"process_name"`
 	ExecPath    string         `yaml:"exec_path"`
 	Selected    bool           `yaml:"selected"`
+	SafetyLevel string         `yaml:"safety_level,omitempty"` // NEW: "protected", "safe", "caution"
 	PIDs        map[int32]bool `yaml:"-"`
 }
 
@@ -312,8 +435,16 @@ func loadConfig() (Config, bool, error) {
 		return Config{}, false, fmt.Errorf("could not parse config.yaml: %w", err)
 	}
 
-	if len(cfg.Safelist) == 0 {
-		cfg.Safelist = defaultSafelist
+	// Migrate old v2.1.0 config to v2.1.1
+	if migrateOldConfig(&cfg) {
+		// Save migrated config
+		fOut, err := os.Create("config.yaml")
+		if err == nil {
+			defer fOut.Close()
+			encoder := yaml.NewEncoder(fOut)
+			encoder.SetIndent(2)
+			_ = encoder.Encode(cfg)
+		}
 	}
 
 	loadTheme(&cfg)
@@ -335,9 +466,12 @@ func createDefaultConfig() (Config, error) {
 			Quit:        []string{"q", "ctrl+c"},
 			Help:        []string{"?"},
 		},
-		Presets:  []PresetConfig{},
-		Apps:     []AppEntry{},
-		Safelist: defaultSafelist,
+		Presets: []PresetConfig{},
+		Apps:    []AppEntry{},
+		Protection: ProtectionConfig{
+			ExclusionList: getDefaultProtectionList(),
+		},
+		SafeToKill: getDefaultSafeToKill(),
 	}
 
 	f, err := os.Create("config.yaml")
@@ -410,7 +544,7 @@ func initialModel() model {
 		PresetMenu:   key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "presets")),
 		Suspend:      key.NewBinding(key.WithKeys(cfg.Hotkeys.SuspendMode...), key.WithHelp("S", "SUSPEND")),
 		Resume:       key.NewBinding(key.WithKeys(cfg.Hotkeys.ResumeMode...), key.WithHelp("U", "RESUME")),
-		SafelistMenu: key.NewBinding(key.WithKeys("w"), key.WithHelp("w", "safelist")),
+		SafelistMenu: key.NewBinding(key.WithKeys("w"), key.WithHelp("w", "exclusion list")),
 	}
 
 	prog := progress.New(
@@ -828,13 +962,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.safelistCursor--
 				}
 			case key.Matches(msg, m.keys.Down):
-				if m.safelistCursor < len(m.config.Safelist)-1 {
+				if m.safelistCursor < len(m.config.Protection.ExclusionList)-1 {
 					m.safelistCursor++
 				}
 			case key.Matches(msg, m.keys.DeleteItem):
-				if len(m.config.Safelist) > 0 {
-					m.config.Safelist = append(m.config.Safelist[:m.safelistCursor], m.config.Safelist[m.safelistCursor+1:]...)
-					if m.safelistCursor >= len(m.config.Safelist) && m.safelistCursor > 0 {
+				if len(m.config.Protection.ExclusionList) > 0 {
+					m.config.Protection.ExclusionList = append(
+						m.config.Protection.ExclusionList[:m.safelistCursor],
+						m.config.Protection.ExclusionList[m.safelistCursor+1:]...,
+					)
+					if m.safelistCursor >= len(m.config.Protection.ExclusionList) && m.safelistCursor > 0 {
 						m.safelistCursor--
 					}
 					m.saveConfig()
@@ -842,7 +979,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case msg.String() == "enter":
 				newProc := strings.TrimSpace(m.safelistInput.Value())
 				if newProc != "" {
-					m.config.Safelist = append(m.config.Safelist, newProc)
+					m.config.Protection.ExclusionList = append(m.config.Protection.ExclusionList, newProc)
 					m.safelistInput.SetValue("")
 					m.saveConfig()
 				}
@@ -869,6 +1006,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					ProcessName: m.inputs[1].Value(),
 					ExecPath:    m.inputs[2].Value(),
 					Selected:    true,
+					SafetyLevel: detectSafetyLevel(m.inputs[1].Value(), &m.config), // NEW
 				}
 				if m.isNewItem {
 					m.config.Apps = append(m.config.Apps, newApp)
@@ -1159,10 +1297,10 @@ func waitForNextProcess(m model, index int) tea.Cmd {
 			}
 		}
 
-		// Check safelist
-		if isInSafelist(app.ProcessName, m.config.Safelist) {
+		// Check exclusion list (protected processes)
+		if isInSafelist(app.ProcessName, m.config.Protection.ExclusionList) {
 			return processResultMsg{
-				message: fmt.Sprintf("[SAFE] %s is protected", app.Name),
+				message: fmt.Sprintf("[🛡️ PROTECTED] %s cannot be modified", app.Name),
 				percent: percent,
 				done:    false,
 				index:   index,
@@ -1350,7 +1488,21 @@ func (m model) View() string {
 				if app.Selected {
 					check = "[x]"
 				}
-				label := fmt.Sprintf("%s %s %s", cursor, check, app.Name)
+
+				// Safety indicator
+				safetyIcon := ""
+				switch app.SafetyLevel {
+				case "protected":
+					safetyIcon = "🛡️ "
+				case "safe":
+					safetyIcon = "✓ "
+				case "caution":
+					safetyIcon = "⚠ "
+				default:
+					safetyIcon = "  "
+				}
+
+				label := fmt.Sprintf("%s %s %s%s", cursor, check, safetyIcon, app.Name)
 
 				if m.cursor == i {
 					s += selected.Render(label) + "\n"
@@ -1367,7 +1519,8 @@ func (m model) View() string {
 		if len(presetHints) > 0 {
 			s += presetStyle.Render("Presets: "+strings.Join(presetHints, "  ")) + "\n"
 		}
-		s += "\n" + m.help.View(m.keys)
+		s += "\n" + lipgloss.NewStyle().Faint(true).Render("Legend: 🛡️=Protected  ✓=Safe to Kill  ⚠=Use Caution") + "\n"
+		s += m.help.View(m.keys)
 
 	case statePresetList:
 		s += titleStyle.Render("MANAGE PRESETS") + "\n\n"
@@ -1429,13 +1582,13 @@ func (m model) View() string {
 
 	case stateSafelistManager:
 		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
-		s += titleStyle.Render("SAFELIST MANAGER") + "\n\n"
-		s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("Protected processes that cannot be killed or suspended:") + "\n\n"
+		s += titleStyle.Render("EXCLUSION LIST MANAGER") + "\n\n"
+		s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("🛡️ Protected processes that cannot be killed or suspended:") + "\n\n"
 
-		if len(m.config.Safelist) == 0 {
-			s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("No processes in safelist.") + "\n"
+		if len(m.config.Protection.ExclusionList) == 0 {
+			s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("No processes in exclusion list.") + "\n"
 		} else {
-			for i, proc := range m.config.Safelist {
+			for i, proc := range m.config.Protection.ExclusionList {
 				cursor := "  "
 				if m.safelistCursor == i {
 					cursor = "> "
