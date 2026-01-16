@@ -1,18 +1,38 @@
-# Welcome to SceneShift
+# SceneShift Documentation
 
-**SceneShift** is a terminal-first process optimizer built with [Go](https://go.dev/) and [Bubble Tea](https://github.com/charmbracelet/bubbletea).
+SceneShift is a terminal-based utility for managing application states on Windows. It helps you reclaim system resources quickly by switching your PC into predefined *scenes* — focused system states tailored for work, gaming, streaming, or recovery.
 
-It is designed for gamers and 3D artists who need every bit of performance. SceneShift allows you to **kill or suspend** background applications to free up CPU and RAM before launching a heavy task—clean, fast, and zero-bloat.
-
-Think of it as switching into a new "performance scene" for your machine.
+SceneShift is opinionated by design: fast execution, minimal UI, and explicit control.
 
 ![SceneShift Demo](https://raw.githubusercontent.com/tandukuda/SceneShift/main/assets/demo.gif)
 
-## Key Features
+## What SceneShift Solves
 
-* **🚀 Smart Process Control:** Kill or suspend multiple apps with a single toggle.
-* **⏸️ Suspend Mode:** Pause background apps (like Spotify or Chrome) to free up resources without closing them completely.
-* **📊 Snapshot RAM:** Get real-time feedback on exactly how much memory (MB/GB) was reclaimed.
-* **🎨 Modular Theming:** Visual settings are separated into `theme.yaml` so you can swap styles easily.
-* **📁 Presets:** Switch between "Gaming", "Rendering", or custom profiles instantly.
-* **🛡️ System Integration:** Automatically handles Admin elevation for managing protected processes.
+Modern Windows workflows accumulate background apps silently. Launchers, updaters, browsers, sync tools — all consuming RAM and CPU.
+
+SceneShift exists to:
+- reduce friction before performance-critical tasks
+- replace manual task-killing rituals
+- make system state management repeatable
+
+---
+
+## Core Concepts
+
+**Scenes**  
+A scene is a named preset that defines which applications should be suspended or terminated.
+
+**Modes**
+- Kill: force-close selected processes
+- Suspend: pause processes without terminating them
+
+**Snapshots**
+Capture system memory state before and after a scene switch.
+
+---
+
+## Start Here
+
+If you're new:
+→ Go to **Getting Started**
+→ Then read **Using Scenes**
