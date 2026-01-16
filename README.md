@@ -271,9 +271,7 @@ SceneShift.exe
 
 ## ☕ Support
 
-If SceneShift helped you squeeze out those extra frames or finish a render faster, consider buying me a coffee!
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/tandukuda)
+If you find SceneShift useful and want to support its development, you can [buy me a coffee here](https://ko-fi.com/tandukuda).
 
 ---
 
@@ -337,5 +335,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Built with ❤️ by [tandukuda](https://github.com/tandukuda)**
 
 [⭐ Star this repo](https://github.com/tandukuda/sceneshift) • [🐛 Report Bug](https://github.com/tandukuda/sceneshift/issues) • [💡 Request Feature](https://github.com/tandukuda/sceneshift/issues)
-
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/tandukuda)
 </div>
