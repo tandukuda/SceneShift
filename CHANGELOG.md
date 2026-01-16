@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [2.1.1] - 2026-01-XX
+## [2.1.1] - 2026-01-16
 
 ### 🎯 Overview
 A patch release focused on clarity improvements and enhanced safety features based on community feedback. This version improves terminology, adds curated safe-to-kill process lists, and introduces visual safety indicators.
