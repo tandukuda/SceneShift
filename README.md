@@ -269,6 +269,14 @@ SceneShift.exe
 
 ---
 
+## ☕ Support
+
+If SceneShift helped you squeeze out those extra frames or finish a render faster, consider buying me a coffee!
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/tandukuda)
+
+---
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
