@@ -35,4 +35,3 @@ Capture system memory state before and after a scene switch.
 
 If you're new:
 → Go to **Getting Started**
-→ Then read **Using Scenes**

@@ -53,7 +53,7 @@ This release focuses on **clarity, safety, and polish**, based directly on user 
 - ✨ Expanded protection for Windows‑critical processes
 
 Full changelog:  
-👉 [https://github.com/tandukuda/SceneShift/releases/latest](https://github.com/tandukuda/SceneShift/releases/latest)
+👉 [CHANGELOG](https://github.com/tandukuda/SceneShift/releases/latest)
 
 ---
 
@@ -141,7 +141,7 @@ One keypress = one optimized system state.
 
 ## Documentation
 
-👉 [https://tandukuda.github.io/SceneShift/](https://tandukuda.github.io/SceneShift/)
+👉 [DOCS](https://tandukuda.github.io/SceneShift/)
 
 ---
 

@@ -1,7 +1,5 @@
 # Troubleshooting
 
----
-
 ## Scene doesn't work
 
 - Ensure SceneShift is running as Administrator
