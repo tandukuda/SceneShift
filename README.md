@@ -2,7 +2,7 @@
   <img src="assets/logo.png" width="512" alt="SceneShift Logo">
 </p>
 
-<h1 align="center">SceneShift 🎮🚀</h1>
+<h1 align="center">SceneShift</h1>
 
 [![Latest Release](https://img.shields.io/github/v/release/tandukuda/SceneShift?style=for-the-badge&color=blue)](https://github.com/tandukuda/SceneShift/releases/latest)
 [![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
@@ -46,14 +46,14 @@ It was built to be:
 
 This release focuses on **clarity, safety, and polish**, based directly on user feedback.
 
-- 🏷️ Clearer terminology: *Safelist* → **Exclusion List**
-- 📋 Expanded, curated safe‑to‑kill process lists
-- 🛡️ Improved safety indicators for protected / caution processes
-- 🔄 Automatic config migration from v2.1.0
-- ✨ Expanded protection for Windows‑critical processes
+- Clearer terminology: *Safelist* → **Exclusion List**
+- Expanded, curated safe‑to‑kill process lists
+- Improved safety indicators for protected / caution processes
+- Automatic config migration from v2.1.0
+- Expanded protection for Windows‑critical processes
 
 Full changelog:  
-👉 [CHANGELOG](https://github.com/tandukuda/SceneShift/releases/latest)
+[CHANGELOG](https://github.com/tandukuda/SceneShift/releases/latest)
 
 ---
 
@@ -82,7 +82,7 @@ scoop install sceneshift
 2. Move it anywhere (e.g. `Documents/SceneShift`)
 3. Run `SceneShift.exe`
 
-➡️ SceneShift creates its config automatically on first run.
+SceneShift creates its config automatically on first run.
 
 ### Option 3: Build from Source
 
@@ -112,7 +112,7 @@ All without touching the mouse.
 
 ## Key Features
 
-### 🔄 Kill, Suspend, Resume, Restore
+### Kill, Suspend, Resume, Restore
 - **Kill** — permanently terminate processes for max resources
 - **Suspend** — freeze apps without closing them
 - **Resume** — instantly unfreeze suspended apps
@@ -120,7 +120,7 @@ All without touching the mouse.
 
 ---
 
-### 🛡️ Smart Safety System
+### Smart Safety System
 
 - 🛡️ **Protected** — critical Windows processes
 - ✓ **Safe to Kill** — verified background apps
@@ -132,7 +132,7 @@ A confirmation countdown appears before any destructive action.
 
 ---
 
-### ⚡ Preset System
+### Preset System
 
 Presets define **performance scenes**.
 One keypress = one optimized system state.
@@ -141,11 +141,11 @@ One keypress = one optimized system state.
 
 ## Documentation
 
-👉 [DOCS](https://tandukuda.github.io/SceneShift/)
+[DOCS](https://tandukuda.github.io/SceneShift/)
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### v2.2 (Planned)
 * Visual suspension status indicators in menu
@@ -163,7 +163,7 @@ One keypress = one optimized system state.
 
 ---
 
-## 🤝 Community & Feedback
+## Community & Feedback
 
 SceneShift grows through **real-world usage and feedback**.
 
@@ -181,8 +181,8 @@ Have ideas or presets to share?
 
 If SceneShift is part of your workflow, sponsorship helps keep it **fast, safe, and maintained**.
 
-- ☕ Ko‑fi: [https://ko-fi.com/tandukuda](https://ko-fi.com/tandukuda)
-- 💳 PayPal: [https://paypal.me/justbams](https://paypal.me/justbams)
+- Ko‑fi: [https://ko-fi.com/tandukuda](https://ko-fi.com/tandukuda)
+- PayPal: [https://paypal.me/justbams](https://paypal.me/justbams)
 
 ---
 
