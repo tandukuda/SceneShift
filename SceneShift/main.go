@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -288,6 +289,144 @@ type AppEntry struct {
 	PIDs        map[int32]bool `yaml:"-"`
 }
 
+// ProcessStats holds resource usage information
+type ProcessStats struct {
+	CPUPercent float64
+	RAMMB      uint64
+	IsRunning  bool
+}
+
+// StatsCache caches process statistics to reduce overhead
+type StatsCache struct {
+	stats     map[string]ProcessStats
+	timestamp map[string]time.Time
+	mutex     sync.RWMutex
+	ttl       time.Duration
+}
+
+// NewStatsCache creates a new stats cache with 2-second TTL
+func NewStatsCache() *StatsCache {
+	return &StatsCache{
+		stats:     make(map[string]ProcessStats),
+		timestamp: make(map[string]time.Time),
+		ttl:       2 * time.Second,
+	}
+}
+
+// Get retrieves stats, using cache if valid
+func (sc *StatsCache) Get(processName string) ProcessStats {
+	sc.mutex.RLock()
+	if ts, exists := sc.timestamp[processName]; exists {
+		if time.Since(ts) < sc.ttl {
+			stats := sc.stats[processName]
+			sc.mutex.RUnlock()
+			return stats
+		}
+	}
+	sc.mutex.RUnlock()
+
+	// Cache miss or expired, fetch new stats
+	stats := getProcessStats(processName)
+
+	sc.mutex.Lock()
+	sc.stats[processName] = stats
+	sc.timestamp[processName] = time.Now()
+	sc.mutex.Unlock()
+
+	return stats
+}
+
+// OperationType represents different types of operations
+type OperationType int
+
+const (
+	OpKill OperationType = iota
+	OpSuspend
+	OpResume
+	OpRestore
+)
+
+// String returns the string representation of an operation type
+func (ot OperationType) String() string {
+	switch ot {
+	case OpKill:
+		return "KILL"
+	case OpSuspend:
+		return "SUSPEND"
+	case OpResume:
+		return "RESUME"
+	case OpRestore:
+		return "RESTORE"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// AppHistoryItem stores information about an app in history
+type AppHistoryItem struct {
+	Name        string
+	ProcessName string
+	ExecPath    string
+	PIDs        []int32 // For suspend operations
+}
+
+// HistoryEntry represents a single operation in history
+type HistoryEntry struct {
+	ID        int
+	Timestamp time.Time
+	Operation OperationType
+	Apps      []AppHistoryItem
+	Success   int // Number of successful operations
+	Failed    int // Number of failed operations
+}
+
+// SessionHistory manages the history of operations
+type SessionHistory struct {
+	Entries []HistoryEntry
+	MaxSize int
+}
+
+// NewSessionHistory creates a new session history with default max size
+func NewSessionHistory() *SessionHistory {
+	return &SessionHistory{
+		Entries: make([]HistoryEntry, 0),
+		MaxSize: 50,
+	}
+}
+
+// Add adds a new entry to history
+func (sh *SessionHistory) Add(entry HistoryEntry) {
+	entry.ID = len(sh.Entries)
+	sh.Entries = append(sh.Entries, entry)
+
+	// Trim if exceeds max size
+	if len(sh.Entries) > sh.MaxSize {
+		sh.Entries = sh.Entries[1:]
+		// Renumber IDs
+		for i := range sh.Entries {
+			sh.Entries[i].ID = i
+		}
+	}
+}
+
+// GetLast returns the most recent history entry, or nil if empty
+func (sh *SessionHistory) GetLast() *HistoryEntry {
+	if len(sh.Entries) == 0 {
+		return nil
+	}
+	return &sh.Entries[len(sh.Entries)-1]
+}
+
+// Clear clears all history
+func (sh *SessionHistory) Clear() {
+	sh.Entries = make([]HistoryEntry, 0)
+}
+
+// IsEmpty returns true if history is empty
+func (sh *SessionHistory) IsEmpty() bool {
+	return len(sh.Entries) == 0
+}
+
 // --- Hardcoded Theme Presets ---
 var themePresets = []ThemeConfig{
 	{Name: "Rose Pine Moon", Base: "#232136", Surface: "#2a273f", Text: "#e0def4", Highlight: "#3e8fb0", Select: "#c4a7e7", Kill: "#eb6f92", Restore: "#9ccfd8", Suspend: "#f6c177", Warn: "#ea9a97"},
@@ -371,6 +510,8 @@ const (
 	statePresetEdit
 	statePresetAppPicker
 	stateSafelistManager
+	stateHistory
+	stateUndoConfirm
 )
 
 type tickMsg time.Time
@@ -386,6 +527,8 @@ type model struct {
 	mode          string
 	currentState  state
 	isFirstLaunch bool
+	statsCache    *StatsCache
+	history       *SessionHistory
 
 	// Editor Logic
 	inputs     []textinput.Model
@@ -400,6 +543,9 @@ type model struct {
 	// Safelist Logic
 	safelistCursor int
 	safelistInput  textinput.Model
+
+	historyCursor int
+	undoMessage   string
 
 	// List Logic
 	procList    list.Model
@@ -599,6 +745,8 @@ func initialModel() model {
 		procList:      lProc,
 		themeList:     lTheme,
 		safelistInput: safeInput,
+		statsCache:    NewStatsCache(),
+		history:       NewSessionHistory(),
 	}
 }
 
@@ -612,6 +760,479 @@ func getRAMUsageMB() uint64 {
 		return 0
 	}
 	return v.Used / 1024 / 1024
+}
+
+// getProcessStats retrieves CPU and RAM stats for a process
+func getProcessStats(processName string) ProcessStats {
+	stats := ProcessStats{}
+
+	procs, err := process.Processes()
+	if err != nil {
+		return stats
+	}
+
+	targets := strings.Split(processName, ",")
+	for _, p := range procs {
+		name, err := p.Name()
+		if err != nil {
+			continue
+		}
+
+		for _, target := range targets {
+			target = strings.TrimSpace(target)
+			if strings.EqualFold(name, target) {
+				stats.IsRunning = true
+
+				// Get CPU usage
+				if cpu, err := p.CPUPercent(); err == nil {
+					stats.CPUPercent += cpu
+				}
+
+				// Get memory usage
+				if mem, err := p.MemoryInfo(); err == nil {
+					stats.RAMMB += mem.RSS / 1024 / 1024
+				}
+			}
+		}
+	}
+
+	return stats
+}
+
+// pidExists checks if a PID is currently active
+func pidExists(pid int32) bool {
+	p, err := process.NewProcess(pid)
+	if err != nil {
+		return false
+	}
+
+	// Verify process is still alive
+	running, err := p.IsRunning()
+	return err == nil && running
+}
+
+// getProcessStatus determines the current state of a process
+// Returns: "running", "suspended", "not_found"
+func getProcessStatus(app AppEntry) string {
+	// If we have PIDs recorded, the process is suspended
+	if len(app.PIDs) > 0 {
+		// Verify at least one PID still exists
+		for pid := range app.PIDs {
+			if pidExists(pid) {
+				return "suspended"
+			}
+		}
+		// All PIDs are gone
+		return "not_found"
+	}
+
+	// Check if process is currently running
+	procs, err := process.Processes()
+	if err != nil {
+		return "not_found"
+	}
+
+	targets := strings.Split(app.ProcessName, ",")
+	for _, p := range procs {
+		name, err := p.Name()
+		if err != nil {
+			continue
+		}
+		for _, target := range targets {
+			target = strings.TrimSpace(target)
+			if strings.EqualFold(name, target) {
+				return "running"
+			}
+		}
+	}
+
+	return "not_found"
+}
+
+// getStatusIcon returns the appropriate icon for process status
+func getStatusIcon(status string) string {
+	switch status {
+	case "running":
+		return "▶️"
+	case "suspended":
+		return "⏸️"
+	case "not_found":
+		return "⚠️"
+	default:
+		return "  "
+	}
+}
+
+// recordKillOperation records a kill operation in history
+func (m *model) recordKillOperation(apps []AppEntry, successCount, failCount int) {
+	items := make([]AppHistoryItem, 0, len(apps))
+	for _, app := range apps {
+		items = append(items, AppHistoryItem{
+			Name:        app.Name,
+			ProcessName: app.ProcessName,
+			ExecPath:    app.ExecPath,
+		})
+	}
+
+	m.history.Add(HistoryEntry{
+		Timestamp: time.Now(),
+		Operation: OpKill,
+		Apps:      items,
+		Success:   successCount,
+		Failed:    failCount,
+	})
+}
+
+// recordSuspendOperation records a suspend operation in history
+func (m *model) recordSuspendOperation(apps []AppEntry, successCount, failCount int) {
+	items := make([]AppHistoryItem, 0, len(apps))
+	for _, app := range apps {
+		// Store current PIDs for undo
+		pids := make([]int32, 0, len(app.PIDs))
+		for pid := range app.PIDs {
+			pids = append(pids, pid)
+		}
+
+		items = append(items, AppHistoryItem{
+			Name:        app.Name,
+			ProcessName: app.ProcessName,
+			ExecPath:    app.ExecPath,
+			PIDs:        pids,
+		})
+	}
+
+	m.history.Add(HistoryEntry{
+		Timestamp: time.Now(),
+		Operation: OpSuspend,
+		Apps:      items,
+		Success:   successCount,
+		Failed:    failCount,
+	})
+}
+
+// recordResumeOperation records a resume operation in history
+func (m *model) recordResumeOperation(apps []AppEntry, successCount, failCount int) {
+	items := make([]AppHistoryItem, 0, len(apps))
+	for _, app := range apps {
+		// Store PIDs that were resumed
+		pids := make([]int32, 0, len(app.PIDs))
+		for pid := range app.PIDs {
+			pids = append(pids, pid)
+		}
+
+		items = append(items, AppHistoryItem{
+			Name:        app.Name,
+			ProcessName: app.ProcessName,
+			ExecPath:    app.ExecPath,
+			PIDs:        pids,
+		})
+	}
+
+	m.history.Add(HistoryEntry{
+		Timestamp: time.Now(),
+		Operation: OpResume,
+		Apps:      items,
+		Success:   successCount,
+		Failed:    failCount,
+	})
+}
+
+// recordRestoreOperation records a restore operation in history
+func (m *model) recordRestoreOperation(apps []AppEntry, successCount, failCount int) {
+	items := make([]AppHistoryItem, 0, len(apps))
+	for _, app := range apps {
+		items = append(items, AppHistoryItem{
+			Name:        app.Name,
+			ProcessName: app.ProcessName,
+			ExecPath:    app.ExecPath,
+		})
+	}
+
+	m.history.Add(HistoryEntry{
+		Timestamp: time.Now(),
+		Operation: OpRestore,
+		Apps:      items,
+		Success:   successCount,
+		Failed:    failCount,
+	})
+}
+
+// performUndo undoes the last operation
+func (m *model) performUndo() tea.Cmd {
+	entry := m.history.GetLast()
+	if entry == nil {
+		m.logs = []string{"No operations to undo"}
+		m.currentState = stateDone
+		m.mode = "undo"
+		return nil
+	}
+
+	// Build undo message
+	appNames := make([]string, len(entry.Apps))
+	for i, app := range entry.Apps {
+		appNames[i] = app.Name
+	}
+
+	m.undoMessage = fmt.Sprintf("Undo %s operation on: %s",
+		entry.Operation.String(),
+		strings.Join(appNames, ", "))
+
+	m.currentState = stateUndoConfirm
+	return nil
+}
+
+// executeUndo executes the undo operation
+func (m *model) executeUndo() tea.Cmd {
+	entry := m.history.GetLast()
+	if entry == nil {
+		m.currentState = stateMenu
+		return nil
+	}
+
+	// Perform undo immediately (not as a command)
+	var msgs []string
+	successCount := 0
+	failCount := 0
+
+	msgs = append(msgs, fmt.Sprintf("Undoing %s operation...", entry.Operation.String()))
+
+	switch entry.Operation {
+	case OpKill:
+		// Undo kill = restore processes
+		for _, app := range entry.Apps {
+			if app.ExecPath == "" {
+				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No executable path", app.Name))
+				failCount++
+				continue
+			}
+
+			cmd := exec.Command(app.ExecPath)
+			if err := cmd.Start(); err != nil {
+				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+				failCount++
+			} else {
+				msgs = append(msgs, fmt.Sprintf("[OK]   Restored %s", app.Name))
+				successCount++
+			}
+		}
+
+	case OpSuspend:
+		// Undo suspend = resume processes
+		for _, app := range entry.Apps {
+			if len(app.PIDs) == 0 {
+				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No PIDs recorded", app.Name))
+				failCount++
+				continue
+			}
+
+			resumed := 0
+			for _, pid := range app.PIDs {
+				if pidExists(pid) {
+					if err := resumeProcess(pid); err == nil {
+						resumed++
+					}
+				}
+			}
+
+			if resumed > 0 {
+				msgs = append(msgs, fmt.Sprintf("[OK]   Resumed %s (%d processes)", app.Name, resumed))
+				successCount++
+
+				// Clear PIDs from config
+				for i := range m.config.Apps {
+					if m.config.Apps[i].Name == app.Name {
+						for _, pid := range app.PIDs {
+							delete(m.config.Apps[i].PIDs, pid)
+						}
+						break
+					}
+				}
+			} else {
+				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: No valid PIDs found", app.Name))
+				failCount++
+			}
+		}
+
+	case OpResume:
+		// Undo resume = re-suspend processes
+		for _, app := range entry.Apps {
+			appRef := m.findAppByName(app.Name)
+			if appRef == nil {
+				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: Not found in config", app.Name))
+				failCount++
+				continue
+			}
+
+			if err := suspendProcessByName(appRef.ProcessName, appRef); err != nil {
+				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+				failCount++
+			} else {
+				msgs = append(msgs, fmt.Sprintf("[OK]   Re-suspended %s", app.Name))
+				successCount++
+			}
+		}
+
+	case OpRestore:
+		// Undo restore = kill processes
+		for _, app := range entry.Apps {
+			procs, _ := process.Processes()
+			killed := false
+			for _, p := range procs {
+				name, _ := p.Name()
+				if strings.EqualFold(name, app.ProcessName) {
+					p.Kill()
+					killed = true
+				}
+			}
+			if killed {
+				msgs = append(msgs, fmt.Sprintf("[OK]   Killed %s", app.Name))
+				successCount++
+			} else {
+				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: Not running", app.Name))
+				failCount++
+			}
+		}
+	}
+
+	// Remove this entry from history after undo
+	if len(m.history.Entries) > 0 {
+		m.history.Entries = m.history.Entries[:len(m.history.Entries)-1]
+	}
+
+	summary := fmt.Sprintf("Undo complete: %d succeeded, %d failed", successCount, failCount)
+	msgs = append(msgs, "", summary)
+
+	// Update model directly
+	m.logs = msgs
+	m.progPercent = 1.0
+	m.currentState = stateDone
+
+	return nil
+}
+
+// undoCmd performs the actual undo operation
+func (m *model) undoCmd(entry *HistoryEntry) tea.Cmd {
+	return func() tea.Msg {
+		var msgs []string
+		successCount := 0
+		failCount := 0
+
+		switch entry.Operation {
+		case OpKill:
+			// Undo kill = restore processes
+			for _, app := range entry.Apps {
+				if app.ExecPath == "" {
+					msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No executable path", app.Name))
+					failCount++
+					continue
+				}
+
+				cmd := exec.Command(app.ExecPath)
+				if err := cmd.Start(); err != nil {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+					failCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Restored %s", app.Name))
+					successCount++
+				}
+			}
+
+		case OpSuspend:
+			// Undo suspend = resume processes
+			for _, app := range entry.Apps {
+				if len(app.PIDs) == 0 {
+					msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No PIDs recorded", app.Name))
+					failCount++
+					continue
+				}
+
+				resumed := 0
+				for _, pid := range app.PIDs {
+					if pidExists(pid) {
+						if err := resumeProcess(pid); err == nil {
+							resumed++
+						}
+					}
+				}
+
+				if resumed > 0 {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Resumed %s (%d processes)", app.Name, resumed))
+					successCount++
+
+					// Clear PIDs from config
+					for i := range m.config.Apps {
+						if m.config.Apps[i].Name == app.Name {
+							for _, pid := range app.PIDs {
+								delete(m.config.Apps[i].PIDs, pid)
+							}
+							break
+						}
+					}
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: No valid PIDs found", app.Name))
+					failCount++
+				}
+			}
+
+		case OpResume:
+			// Undo resume = re-suspend processes
+			for _, app := range entry.Apps {
+				// Find matching processes and suspend them again
+				appRef := m.findAppByName(app.Name)
+				if appRef == nil {
+					msgs = append(msgs, fmt.Sprintf("[SKIP] %s: Not found in config", app.Name))
+					failCount++
+					continue
+				}
+
+				if err := suspendProcessByName(appRef.ProcessName, appRef); err != nil {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+					failCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Re-suspended %s", app.Name))
+					successCount++
+				}
+			}
+
+		case OpRestore:
+			// Undo restore = kill processes
+			for _, app := range entry.Apps {
+				if err := killProcess(app.ProcessName); err != nil {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+					failCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Killed %s", app.Name))
+					successCount++
+				}
+			}
+		}
+
+		// Remove this entry from history after undo
+		if len(m.history.Entries) > 0 {
+			m.history.Entries = m.history.Entries[:len(m.history.Entries)-1]
+		}
+
+		summary := fmt.Sprintf("Undo complete: %d succeeded, %d failed", successCount, failCount)
+		msgs = append(msgs, "", summary)
+
+		// Return a processResultMsg to update the UI
+		return processResultMsg{
+			message: summary,
+			percent: 1.0,
+			done:    true,
+			index:   len(entry.Apps) - 1,
+		}
+	}
+}
+
+// findAppByName finds an app in the config by name
+func (m *model) findAppByName(name string) *AppEntry {
+	for i := range m.config.Apps {
+		if m.config.Apps[i].Name == name {
+			return &m.config.Apps[i]
+		}
+	}
+	return nil
 }
 
 // --- Process Fetching ---
@@ -756,6 +1377,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.currentState = stateAppEdit
 				return m, nil
 
+			case msg.String() == "h":
+				if m.history.IsEmpty() {
+					return m, nil
+				}
+				m.currentState = stateHistory
+				m.historyCursor = len(m.history.Entries) - 1
+				return m, nil
+
+			case msg.String() == "u", msg.String() == "ctrl+z":
+				return m, m.performUndo()
+
 			case key.Matches(msg, m.keys.Kill):
 				m.mode = "kill"
 				m.currentState = stateCountdown
@@ -792,6 +1424,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.currentState = stateSafelistManager
 				m.safelistCursor = 0
 				return m, nil
+
+			// NEW: History keybindings
+			case msg.String() == "h":
+				if m.history.IsEmpty() {
+					// Show a message or do nothing
+					return m, nil
+				}
+				m.currentState = stateHistory
+				m.historyCursor = len(m.history.Entries) - 1
+				return m, nil
+
+			case msg.String() == "u":
+				return m, m.performUndo()
+
+			case msg.String() == "ctrl+z":
+				return m, m.performUndo()
+				// END NEW
 
 			}
 
@@ -989,6 +1638,43 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case stateHistory:
+			switch msg.String() {
+			case "up", "k":
+				if m.historyCursor < len(m.history.Entries)-1 {
+					m.historyCursor++
+				}
+				return m, nil
+
+			case "down", "j":
+				if m.historyCursor > 0 {
+					m.historyCursor--
+				}
+				return m, nil
+
+			case "u":
+				// Undo last operation (most recent)
+				if !m.history.IsEmpty() {
+					return m, m.performUndo()
+				}
+				return m, nil
+
+			case "esc":
+				m.currentState = stateMenu
+				return m, nil
+			}
+
+		case stateUndoConfirm:
+			switch msg.String() {
+			case "enter":
+				return m, m.executeUndo()
+
+			case "esc":
+				m.currentState = stateMenu
+				m.undoMessage = ""
+				return m, nil
+			}
+
 		case stateAppEdit:
 			if key.Matches(msg, m.keys.SearchProc) {
 				m.currentState = stateProcessPicker
@@ -1180,6 +1866,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := m.progress.SetPercent(msg.percent)
 
 		if msg.done {
+			// NEW: Record operation in history before marking as done
+			selectedApps := make([]AppEntry, 0)
+			successCount := 0
+			failCount := 0
+
+			// Count successes and failures from logs
+			for _, log := range m.logs {
+				if strings.Contains(log, "[KILL]") || strings.Contains(log, "[SUSP]") ||
+					strings.Contains(log, "[RESM]") || strings.Contains(log, "[RUN]") {
+					successCount++
+				} else if strings.Contains(log, "[ERR]") {
+					failCount++
+				}
+			}
+
+			// Collect selected apps
+			for _, app := range m.config.Apps {
+				if app.Selected {
+					selectedApps = append(selectedApps, app)
+				}
+			}
+
+			// Record based on mode
+			switch m.mode {
+			case "kill":
+				m.recordKillOperation(selectedApps, successCount, failCount)
+			case "suspend":
+				m.recordSuspendOperation(selectedApps, successCount, failCount)
+			case "resume":
+				m.recordResumeOperation(selectedApps, successCount, failCount)
+			case "restore":
+				m.recordRestoreOperation(selectedApps, successCount, failCount)
+			}
+			// END NEW CODE
+
 			if m.mode == "kill" {
 				endRAM := getRAMUsageMB()
 				if m.startRAM > endRAM {
@@ -1281,6 +2002,7 @@ func processCmd(m model) tea.Cmd {
 func waitForNextProcess(m model, index int) tea.Cmd {
 	return func() tea.Msg {
 		time.Sleep(300 * time.Millisecond)
+		var successCount, failedCount int
 		if index >= len(m.config.Apps) {
 			return processResultMsg{message: "All tasks completed.", percent: 1.0, done: true, index: index}
 		}
@@ -1313,36 +2035,53 @@ func waitForNextProcess(m model, index int) tea.Cmd {
 			err := killProcess(app.ProcessName)
 			if err != nil {
 				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+				failedCount++
 			} else {
 				msg = fmt.Sprintf("[KILL] Terminated %s", app.Name)
+				successCount++
 			}
 		case "suspend":
-			err := suspendProcessByName(app.ProcessName)
+			// Get reference to the actual app in config
+			appRef := &m.config.Apps[index]
+			err := suspendProcessByName(appRef.ProcessName, appRef)
 			if err != nil {
 				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+				failedCount++
 			} else {
 				msg = fmt.Sprintf("[SUSP] Suspended %s", app.Name)
+				successCount++
 			}
 		case "resume":
-			err := resumeProcessByName(app.ProcessName)
+			// Get reference to the actual app in config
+			appRef := &m.config.Apps[index]
+			err := resumeProcessByName(appRef)
 			if err != nil {
 				msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+				failedCount++
 			} else {
 				msg = fmt.Sprintf("[RESM] Resumed %s", app.Name)
+				successCount++
 			}
 		case "restore":
-			err := startProcess(app.ProcessName, app.ExecPath)
-			if err != nil {
-				msg = fmt.Sprintf("[ERR]  Could not start %s", app.Name)
+			if app.ExecPath == "" {
+				msg = fmt.Sprintf("[SKIP] %s: no path", app.Name)
+				failedCount++
 			} else {
-				msg = fmt.Sprintf("[RUN]  Launched %s", app.Name)
+				cmd := exec.Command(app.ExecPath)
+				if err := cmd.Start(); err != nil {
+					msg = fmt.Sprintf("[ERR]  %s: %v", app.Name, err)
+					failedCount++
+				} else {
+					msg = fmt.Sprintf("[REST] Launched %s", app.Name)
+					successCount++
+				}
 			}
 		}
 		return processResultMsg{message: msg, percent: percent, done: false, index: index}
 	}
 }
 
-func suspendProcessByName(rawNames string) error {
+func suspendProcessByName(rawNames string, app *AppEntry) error {
 	procs, err := process.Processes()
 	if err != nil {
 		return err
@@ -1351,6 +2090,12 @@ func suspendProcessByName(rawNames string) error {
 	for i := range targets {
 		targets[i] = strings.TrimSpace(targets[i])
 	}
+
+	// Initialize PIDs map if needed
+	if app.PIDs == nil {
+		app.PIDs = make(map[int32]bool)
+	}
+
 	var lastErr error
 	suspendedCount := 0
 	for _, p := range procs {
@@ -1363,6 +2108,8 @@ func suspendProcessByName(rawNames string) error {
 				if err := suspendProcess(p.Pid); err != nil {
 					lastErr = err
 				} else {
+					// Record the PID
+					app.PIDs[p.Pid] = true
 					suspendedCount++
 				}
 			}
@@ -1377,39 +2124,61 @@ func suspendProcessByName(rawNames string) error {
 	return fmt.Errorf("no processes found")
 }
 
-func resumeProcessByName(rawNames string) error {
-	procs, err := process.Processes()
-	if err != nil {
-		return err
+func resumeProcessByName(app *AppEntry) error {
+	// No PIDs tracked = nothing to resume
+	if len(app.PIDs) == 0 {
+		return fmt.Errorf("no suspended processes found for %s", app.Name)
 	}
-	targets := strings.Split(rawNames, ",")
-	for i := range targets {
-		targets[i] = strings.TrimSpace(targets[i])
-	}
+
 	var lastErr error
 	resumedCount := 0
-	for _, p := range procs {
-		n, err := p.Name()
-		if err != nil {
+	var invalidPIDs []int32
+
+	for pid := range app.PIDs {
+		// Validate PID still exists
+		if !pidExists(pid) {
+			invalidPIDs = append(invalidPIDs, pid)
 			continue
 		}
-		for _, t := range targets {
-			if strings.EqualFold(n, t) {
-				if err := resumeProcess(p.Pid); err != nil {
-					lastErr = err
-				} else {
-					resumedCount++
+
+		// Optional: Validate executable path matches
+		if app.ExecPath != "" {
+			p, err := process.NewProcess(pid)
+			if err == nil {
+				if exe, err := p.Exe(); err == nil {
+					if !strings.EqualFold(exe, app.ExecPath) {
+						invalidPIDs = append(invalidPIDs, pid)
+						continue
+					}
 				}
 			}
 		}
+
+		if err := resumeProcess(pid); err != nil {
+			lastErr = err
+		} else {
+			// Remove PID after successful resume
+			delete(app.PIDs, pid)
+			resumedCount++
+		}
 	}
+
+	// Clean up invalid PIDs
+	for _, pid := range invalidPIDs {
+		delete(app.PIDs, pid)
+	}
+
+	if len(invalidPIDs) > 0 {
+		return fmt.Errorf("resumed %d, %d PIDs no longer valid", resumedCount, len(invalidPIDs))
+	}
+
 	if resumedCount > 0 {
 		return nil
 	}
 	if lastErr != nil {
 		return lastErr
 	}
-	return fmt.Errorf("no processes found")
+	return fmt.Errorf("no valid PIDs to resume")
 }
 
 func killProcess(rawNames string) error {
@@ -1502,7 +2271,18 @@ func (m model) View() string {
 					safetyIcon = "  "
 				}
 
-				label := fmt.Sprintf("%s %s %s%s", cursor, check, safetyIcon, app.Name)
+				// NEW: Status indicator and stats
+				status := getProcessStatus(app)
+				statusIcon := getStatusIcon(status)
+
+				// Get stats from cache
+				stats := m.statsCache.Get(app.ProcessName)
+				statsStr := ""
+				if stats.IsRunning {
+					statsStr = fmt.Sprintf(" CPU: %.1f%% RAM: %d MB", stats.CPUPercent, stats.RAMMB)
+				}
+
+				label := fmt.Sprintf("%s %s %s%s %s%s", cursor, check, safetyIcon, app.Name, statusIcon, statsStr)
 
 				if m.cursor == i {
 					s += selected.Render(label) + "\n"
@@ -1519,7 +2299,8 @@ func (m model) View() string {
 		if len(presetHints) > 0 {
 			s += presetStyle.Render("Presets: "+strings.Join(presetHints, "  ")) + "\n"
 		}
-		s += "\n" + lipgloss.NewStyle().Faint(true).Render("Legend: 🛡️=Protected  ✓=Safe to Kill  ⚠=Use Caution") + "\n"
+		s += "\n" + lipgloss.NewStyle().Faint(true).Render("Legend: 🛡️=Protected  ✓=Safe  ⚠=Caution  |  ▶️=Running  ⏸️=Suspended") + "\n"
+		s += lipgloss.NewStyle().Faint(true).Render("h: History • u/Ctrl+Z: Undo") + "\n"
 		s += m.help.View(m.keys)
 
 	case statePresetList:
@@ -1691,6 +2472,67 @@ func (m model) View() string {
 		if m.currentState == stateDone {
 			s += "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Highlight)).Render("Done! Press any key to return.")
 		}
+
+	case stateHistory:
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
+		selected := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true)
+		unselected := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Text)).Faint(true)
+
+		s += titleStyle.Render("📜 SESSION HISTORY") + "\n\n"
+
+		if m.history.IsEmpty() {
+			s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("No operations recorded this session.") + "\n"
+		} else {
+			// Display history entries (newest first)
+			for i := len(m.history.Entries) - 1; i >= 0; i-- {
+				entry := m.history.Entries[i]
+
+				cursor := "  "
+				if i == m.historyCursor {
+					cursor = "> "
+				}
+
+				// Format timestamp
+				timeStr := entry.Timestamp.Format("15:04:05")
+
+				// Get app names
+				appNames := make([]string, len(entry.Apps))
+				for j, app := range entry.Apps {
+					appNames[j] = app.Name
+				}
+				appsStr := strings.Join(appNames, ", ")
+				if len(appsStr) > 50 {
+					appsStr = appsStr[:47] + "..."
+				}
+
+				// Format line
+				line := fmt.Sprintf("%s[%s] %s - %d apps (%s)",
+					cursor,
+					timeStr,
+					entry.Operation.String(),
+					len(entry.Apps),
+					appsStr)
+
+				if i == m.historyCursor {
+					s += selected.Render(line) + "\n"
+				} else {
+					s += unselected.Render(line) + "\n"
+				}
+			}
+		}
+
+		s += "\n" + lipgloss.NewStyle().Faint(true).Render("↑/↓: Navigate • u: Undo last • Esc: Back") + "\n"
+
+	case stateUndoConfirm:
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
+		warnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn))
+
+		s += titleStyle.Render("⚠️  CONFIRM UNDO") + "\n\n"
+		s += m.undoMessage + "\n\n"
+		s += warnStyle.Render("This will reverse the operation.") + "\n"
+		s += warnStyle.Render("This action cannot be undone.") + "\n\n"
+		s += lipgloss.NewStyle().Faint(true).Render("Enter: Confirm • Esc: Cancel") + "\n"
+
 	}
 
 	return lipgloss.NewStyle().Padding(2, 4).Render(s)
