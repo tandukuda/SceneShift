@@ -1,0 +1,60 @@
+/* docs/stylesheets/extra.css */
+
+:root {
+    /* -- Rose Pine Moon Palette -- */
+    --rp-base: #232136;
+    --rp-surface: #2a273f;
+    --rp-overlay: #393552;
+    --rp-text: #e0def4;
+    --rp-subtle: #908caa;
+    --rp-love: #eb6f92; /* Kill/Red */
+    --rp-gold: #f6c177; /* Warn/Yellow */
+    --rp-rose: #ea9a97;
+    --rp-pine: #3e8fb0; /* Highlight */
+    --rp-foam: #9ccfd8; /* Restore/Cyan */
+    --rp-iris: #c4a7e7; /* Select/Purple */
+
+    /* -- Overriding MkDocs Material Variables -- */
+
+    /* Primary Brand Colors (Header, Links) - Using 'Iris' (Purple) */
+    --md-primary-fg-color: var(--rp-iris);
+    --md-primary-fg-color--light: var(--rp-rose);
+    --md-primary-fg-color--dark: var(--rp-base);
+    --md-primary-bg-color: var(--rp-base); /* Header Background */
+
+    /* Accent Colors (Buttons, Highlights) - Using 'Love' (Red/Pink) */
+    --md-accent-fg-color: var(--rp-love);
+    --md-accent-fg-color--transparent: rgba(235, 111, 146, 0.1);
+
+    /* Backgrounds */
+    --md-default-bg-color: var(--rp-base); /* Main Page Background */
+    --md-default-fg-color: var(--rp-text); /* Main Text Color */
+    --md-default-fg-color--light: var(--rp-subtle); /* Muted Text */
+
+    /* Code Blocks */
+    --md-code-bg-color: var(--rp-surface); /* Code Background */
+    --md-code-fg-color: var(--rp-text); /* Code Text */
+
+    /* Admonitions (Note/Warning boxes) */
+    --md-admonition-bg-color: var(--rp-surface);
+}
+
+/* Specific tweaks to ensure the Header matches the Base background */
+.md-header {
+    background-color: var(--rp-base) !important;
+}
+
+/* Make the tabs/navigation background match */
+.md-tabs {
+    background-color: var(--rp-base) !important;
+}
+
+/* Sidebar background */
+.md-sidebar {
+    background-color: var(--rp-base) !important;
+}
+
+/* Adjusting the search bar to blend in */
+.md-search__input {
+    background-color: var(--rp-surface) !important;
+}
