@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -289,6 +290,22 @@ type AppEntry struct {
 	PIDs        map[int32]bool `yaml:"-"`
 }
 
+// profileItem represents a profile file in the import list
+type profileItem struct {
+	filename    string
+	description string
+	date        string
+}
+
+func (i profileItem) Title() string { return i.filename }
+func (i profileItem) Description() string {
+	if i.date != "" && i.description != "" {
+		return fmt.Sprintf("%s - %s", i.date, i.description)
+	}
+	return i.description
+}
+func (i profileItem) FilterValue() string { return i.filename }
+
 // ProcessStats holds resource usage information
 type ProcessStats struct {
 	CPUPercent float64
@@ -386,6 +403,25 @@ type SessionHistory struct {
 	MaxSize int
 }
 
+// ProfileMetadata stores information about an exported profile
+type ProfileMetadata struct {
+	Version           string    `json:"version"`
+	SceneShiftVersion string    `json:"sceneshift_version"`
+	ExportDate        time.Time `json:"export_date"`
+	Description       string    `json:"description"`
+	Author            string    `json:"author,omitempty"`
+}
+
+// ConfigProfile represents an exportable configuration
+type ConfigProfile struct {
+	Metadata   ProfileMetadata  `json:"metadata"`
+	Apps       []AppEntry       `json:"apps"`
+	Presets    []PresetConfig   `json:"presets"`
+	Theme      ThemeConfig      `json:"theme"`
+	Protection ProtectionConfig `json:"protection"`
+	SafeToKill SafeToKillConfig `json:"safe_to_kill"`
+}
+
 // NewSessionHistory creates a new session history with default max size
 func NewSessionHistory() *SessionHistory {
 	return &SessionHistory{
@@ -457,6 +493,10 @@ type keyMap struct {
 	ThemeMenu    key.Binding
 	PresetMenu   key.Binding
 	SafelistMenu key.Binding
+	History      key.Binding
+	Undo         key.Binding
+	Export       key.Binding
+	Import       key.Binding
 }
 
 func (k keyMap) ShortHelp() []key.Binding {
@@ -470,6 +510,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.NewItem, k.EditItem, k.DeleteItem},
 		{k.Kill, k.Suspend, k.Resume, k.Restore},
 		{k.ThemeMenu, k.PresetMenu, k.SafelistMenu},
+		{k.History, k.Undo, k.Export, k.Import},
 	}
 }
 
@@ -512,6 +553,8 @@ const (
 	stateSafelistManager
 	stateHistory
 	stateUndoConfirm
+	stateProfileExport
+	stateProfileImport
 )
 
 type tickMsg time.Time
@@ -562,6 +605,12 @@ type model struct {
 	startRAM uint64
 	width    int
 	height   int
+
+	// Profile Management
+	profileDescription string
+	profileAuthor      string
+	profileMessage     string
+	profileList        list.Model
 }
 
 // --- Init & Config Loading ---
@@ -691,6 +740,10 @@ func initialModel() model {
 		Suspend:      key.NewBinding(key.WithKeys(cfg.Hotkeys.SuspendMode...), key.WithHelp("S", "SUSPEND")),
 		Resume:       key.NewBinding(key.WithKeys(cfg.Hotkeys.ResumeMode...), key.WithHelp("U", "RESUME")),
 		SafelistMenu: key.NewBinding(key.WithKeys("w"), key.WithHelp("w", "exclusion list")),
+		History:      key.NewBinding(key.WithKeys("h"), key.WithHelp("h", "history")),
+		Undo:         key.NewBinding(key.WithKeys("u", "ctrl+z"), key.WithHelp("u/Ctrl+Z", "undo")),
+		Export:       key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("Ctrl+E", "export")),
+		Import:       key.NewBinding(key.WithKeys("i"), key.WithHelp("i", "import")),
 	}
 
 	prog := progress.New(
@@ -727,6 +780,12 @@ func initialModel() model {
 	lTheme.Title = "Select Theme"
 	lTheme.SetShowHelp(false)
 
+	lProfile := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	lProfile.Title = "Select Profile"
+	lProfile.SetShowHelp(false)
+	lProfile.SetFilteringEnabled(false)
+	lProfile.DisableQuitKeybindings()
+
 	initialState := stateMenu
 	if firstLaunch {
 		initialState = stateThemePicker
@@ -747,6 +806,7 @@ func initialModel() model {
 		safelistInput: safeInput,
 		statsCache:    NewStatsCache(),
 		history:       NewSessionHistory(),
+		profileList:   lProfile,
 	}
 }
 
@@ -1235,6 +1295,121 @@ func (m *model) findAppByName(name string) *AppEntry {
 	return nil
 }
 
+// scanForProfiles scans current directory for profile JSON files
+func scanForProfiles() []profileItem {
+	files, err := os.ReadDir(".")
+	if err != nil {
+		return []profileItem{}
+	}
+
+	var profiles []profileItem
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		name := file.Name()
+		if !strings.HasPrefix(name, "sceneshift-profile-") || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+
+		// Try to read metadata
+		data, err := os.ReadFile(name)
+		if err != nil {
+			continue
+		}
+
+		var profile ConfigProfile
+		err = json.Unmarshal(data, &profile)
+		if err != nil {
+			profiles = append(profiles, profileItem{
+				filename:    name,
+				description: "Invalid profile",
+				date:        "",
+			})
+			continue
+		}
+
+		profiles = append(profiles, profileItem{
+			filename:    name,
+			description: profile.Metadata.Description,
+			date:        profile.Metadata.ExportDate.Format("2006-01-02"),
+		})
+	}
+
+	return profiles
+}
+
+// exportProfile exports the current configuration to a JSON file
+func (m *model) exportProfile(description, author string) error {
+	profile := ConfigProfile{
+		Metadata: ProfileMetadata{
+			Version:           "1.0",
+			SceneShiftVersion: Version,
+			ExportDate:        time.Now(),
+			Description:       description,
+			Author:            author,
+		},
+		Apps:       m.config.Apps,
+		Presets:    m.config.Presets,
+		Theme:      m.config.Theme,
+		Protection: m.config.Protection,
+		SafeToKill: m.config.SafeToKill,
+	}
+
+	data, err := json.MarshalIndent(profile, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal profile: %v", err)
+	}
+
+	filename := fmt.Sprintf("sceneshift-profile-%s.json", time.Now().Format("2006-01-02"))
+	err = os.WriteFile(filename, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %v", err)
+	}
+
+	m.profileMessage = fmt.Sprintf("✅ Profile exported to: %s", filename)
+	return nil
+}
+
+// importProfile imports a configuration from a JSON file
+func (m *model) importProfile(filepath string, mergeMode bool) error {
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %v", err)
+	}
+
+	var profile ConfigProfile
+	err = json.Unmarshal(data, &profile)
+	if err != nil {
+		return fmt.Errorf("invalid profile format: %v", err)
+	}
+
+	// Version check
+	if profile.Metadata.SceneShiftVersion > Version {
+		m.profileMessage = fmt.Sprintf("⚠️ Warning: Profile from newer version (%s)", profile.Metadata.SceneShiftVersion)
+	}
+
+	if mergeMode {
+		// Merge: Add to existing config
+		m.config.Apps = append(m.config.Apps, profile.Apps...)
+		m.config.Presets = append(m.config.Presets, profile.Presets...)
+		// Don't merge theme, protection, or safe-to-kill lists
+		m.profileMessage = fmt.Sprintf("✅ Merged %d apps and %d presets", len(profile.Apps), len(profile.Presets))
+	} else {
+		// Replace: Overwrite existing config
+		m.config.Apps = profile.Apps
+		m.config.Presets = profile.Presets
+		m.config.Theme = profile.Theme
+		m.config.Protection = profile.Protection
+		m.config.SafeToKill = profile.SafeToKill
+		m.profileMessage = "✅ Profile imported successfully"
+	}
+
+	m.saveConfig()
+	return nil
+}
+
 // --- Process Fetching ---
 func fetchRunningProcesses() []list.Item {
 	procs, _ := process.Processes()
@@ -1286,8 +1461,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.help.Width = msg.Width
-		m.procList.SetSize(msg.Width, msg.Height-6)
-		m.themeList.SetSize(msg.Width, msg.Height-4)
+		// Ensure minimum heights to prevent negative values
+		procHeight := msg.Height - 6
+		if procHeight < 1 {
+			procHeight = 1
+		}
+		themeHeight := msg.Height - 4
+		if themeHeight < 1 {
+			themeHeight = 1
+		}
+		profileHeight := msg.Height - 8
+		if profileHeight < 1 {
+			profileHeight = 1
+		}
+		m.procList.SetSize(msg.Width, procHeight)
+		m.themeList.SetSize(msg.Width, themeHeight)
+		m.profileList.SetSize(msg.Width, profileHeight)
 
 	case tea.KeyMsg:
 		// Global Quit (Context Aware)
@@ -1387,6 +1576,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case msg.String() == "u", msg.String() == "ctrl+z":
 				return m, m.performUndo()
+
+			case msg.String() == "ctrl+e":
+				// Export profile
+				m.currentState = stateProfileExport
+				m.profileDescription = ""
+				m.profileAuthor = ""
+				m.setupProfileInputs()
+				return m, nil
+
+			case msg.String() == "i":
+				// Import profile - scan for available profiles
+				profiles := scanForProfiles()
+
+				items := make([]list.Item, len(profiles))
+				for i, p := range profiles {
+					items[i] = p
+				}
+
+				m.profileList = list.New(items, list.NewDefaultDelegate(), 0, 0)
+				m.profileList.Title = "Select Profile to Import"
+				m.profileList.SetShowHelp(false)
+
+				m.currentState = stateProfileImport
+				return m, nil
 
 			case key.Matches(msg, m.keys.Kill):
 				m.mode = "kill"
@@ -1674,6 +1887,73 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.undoMessage = ""
 				return m, nil
 			}
+
+		case stateProfileExport:
+			switch msg.String() {
+			case "enter":
+				description := m.inputs[0].Value()
+				author := m.inputs[1].Value()
+
+				if description == "" {
+					description = "SceneShift configuration"
+				}
+
+				err := m.exportProfile(description, author)
+				if err != nil {
+					m.profileMessage = fmt.Sprintf("❌ Export failed: %v", err)
+				}
+
+				m.currentState = stateMenu
+				return m, nil
+
+			case "esc":
+				m.currentState = stateMenu
+				return m, nil
+
+			case "tab", "shift+tab":
+				if msg.String() == "tab" {
+					m.focusIndex = (m.focusIndex + 1) % len(m.inputs)
+				} else {
+					m.focusIndex = (m.focusIndex - 1 + len(m.inputs)) % len(m.inputs)
+				}
+			}
+
+			// Update inputs
+			cmds := make([]tea.Cmd, len(m.inputs))
+			for i := range m.inputs {
+				if i == m.focusIndex {
+					cmdFocus := m.inputs[i].Focus()
+					m.inputs[i], cmd = m.inputs[i].Update(msg)
+					cmds[i] = tea.Batch(cmdFocus, cmd)
+				} else {
+					m.inputs[i].Blur()
+				}
+			}
+			return m, tea.Batch(cmds...)
+
+		case stateProfileImport:
+			switch msg.String() {
+			case "enter":
+				if m.profileList.SelectedItem() != nil {
+					filename := m.profileList.SelectedItem().(profileItem).filename
+
+					err := m.importProfile(filename, true)
+					if err != nil {
+						m.profileMessage = fmt.Sprintf("❌ Import failed: %v", err)
+					}
+
+					m.currentState = stateMenu
+				}
+				return m, nil
+
+			case "esc":
+				m.currentState = stateMenu
+				return m, nil
+			}
+
+			// Let the list handle the input
+			m.profileList, cmd = m.profileList.Update(msg)
+			return m, cmd
 
 		case stateAppEdit:
 			if key.Matches(msg, m.keys.SearchProc) {
@@ -1964,6 +2244,31 @@ func (m *model) setupThemeInputs() {
 		t.SetValue(vals[i])
 		t.Placeholder = "#000000"
 		m.inputs[i] = t
+	}
+}
+
+func (m *model) setupProfileInputs() {
+	if m.currentState == stateProfileExport {
+		m.inputs = make([]textinput.Model, 2)
+		for i := range m.inputs {
+			t := textinput.New()
+			t.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Highlight))
+			m.inputs[i] = t
+		}
+		m.inputs[0].Prompt = "Description: "
+		m.inputs[0].Placeholder = "My gaming optimization setup"
+		m.inputs[1].Prompt = "Author (optional): "
+		m.inputs[1].Placeholder = "Your name"
+		m.focusIndex = 0
+		m.inputs[0].Focus()
+	} else if m.currentState == stateProfileImport {
+		m.inputs = make([]textinput.Model, 1)
+		t := textinput.New()
+		t.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Highlight))
+		t.Prompt = "File path: "
+		t.Placeholder = "sceneshift-profile-2026-01-28.json"
+		t.Focus()
+		m.inputs[0] = t
 	}
 }
 
@@ -2300,8 +2605,13 @@ func (m model) View() string {
 			s += presetStyle.Render("Presets: "+strings.Join(presetHints, "  ")) + "\n"
 		}
 		s += "\n" + lipgloss.NewStyle().Faint(true).Render("Legend: 🛡️=Protected  ✓=Safe  ⚠=Caution  |  ▶️=Running  ⏸️=Suspended") + "\n"
-		s += lipgloss.NewStyle().Faint(true).Render("h: History • u/Ctrl+Z: Undo") + "\n"
-		s += m.help.View(m.keys)
+
+		// Show profile message if present
+		if m.profileMessage != "" {
+			s += "\n" + lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Highlight)).Render(m.profileMessage) + "\n"
+		}
+
+		s += "\n" + m.help.View(m.keys)
 
 	case statePresetList:
 		s += titleStyle.Render("MANAGE PRESETS") + "\n\n"
@@ -2532,6 +2842,35 @@ func (m model) View() string {
 		s += warnStyle.Render("This will reverse the operation.") + "\n"
 		s += warnStyle.Render("This action cannot be undone.") + "\n\n"
 		s += lipgloss.NewStyle().Faint(true).Render("Enter: Confirm • Esc: Cancel") + "\n"
+
+	case stateProfileExport:
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
+		inputStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Highlight)).MarginBottom(1)
+
+		s += titleStyle.Render("💾 EXPORT PROFILE") + "\n\n"
+		s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Text)).Render("Save your configuration to share or backup.") + "\n\n"
+
+		for i := range m.inputs {
+			s += inputStyle.Render(m.inputs[i].View()) + "\n"
+		}
+
+		s += "\n" + lipgloss.NewStyle().Faint(true).Render("Tab: Next field • Enter: Export • Esc: Cancel") + "\n"
+
+	case stateProfileImport:
+		titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Select)).Bold(true).Underline(true)
+		warnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn))
+
+		s += titleStyle.Render("📥 IMPORT PROFILE") + "\n\n"
+		s += warnStyle.Render("⚠️ This will merge the profile with your current config.") + "\n\n"
+
+		if m.profileList.Items() == nil || len(m.profileList.Items()) == 0 {
+			s += lipgloss.NewStyle().Foreground(lipgloss.Color(m.config.Theme.Warn)).Render("No profiles found in current directory.") + "\n\n"
+			s += lipgloss.NewStyle().Faint(true).Render("Export a profile first (Ctrl+E) or place profile files here.") + "\n"
+		} else {
+			s += m.profileList.View()
+		}
+
+		s += "\n" + lipgloss.NewStyle().Faint(true).Render("↑/↓: Navigate • Enter: Import • Esc: Cancel") + "\n"
 
 	}
 
