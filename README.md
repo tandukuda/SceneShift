@@ -299,8 +299,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [Discussions](https://github.com/tandukuda/SceneShift/discussions)
 
 ---
-
----
 <div align="center">
 
 Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) by Charm
