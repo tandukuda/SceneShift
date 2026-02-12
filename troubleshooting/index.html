@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="generator" content="mkdocs-1.6.1, mkdocs-terminal-4.8.0">
+     
+     
+    
+    <link rel="canonical" href="https://tandukuda.github.io/SceneShift/troubleshooting/"><link rel="icon" type="image/png" sizes="192x192" href="../img/android-chrome-192x192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="../img/android-chrome-512x512.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="../img/apple-touch-icon.png" />
+<link rel="shortcut icon" type="image/png" sizes="48x48" href="../img/favicon.ico" />
+<link rel="icon" type="image/png" sizes="16x16" href="../img/favicon-16x16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32x32.png" />
+
+
+    
+ 
+<title>Troubleshooting - SceneShift</title>
+
+
+<link href="../css/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+<link href="../css/fontawesome/css/solid.min.css" rel="stylesheet">
+<link href="../css/normalize.css" rel="stylesheet">
+<link href="../css/terminal.css" rel="stylesheet">
+<link href="../css/theme.css" rel="stylesheet">
+<link href="../css/theme.tile_grid.css" rel="stylesheet">
+<link href="../css/theme.footer.css" rel="stylesheet">
+<!-- dark color palette -->
+<link href="../css/palettes/dark.css" rel="stylesheet">
+
+<!-- page layout -->
+<style>
+/* initially set page layout to a one column grid */
+.terminal-mkdocs-main-grid {
+    display: grid;
+    grid-column-gap: 1.4em;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+}
+
+/*  
+*   when side navigation is not hidden, use a two column grid.  
+*   if the screen is too narrow, fall back to the initial one column grid layout.
+*   in this case the main content will be placed under the navigation panel. 
+*/
+@media only screen and (min-width: 70em) {
+    .terminal-mkdocs-main-grid {
+        grid-template-columns: 4fr 9fr;
+    }
+}</style>
+
+
+
+     
+    
+    
+
+    
+    <!-- search css support -->
+<link href="../css/search/bootstrap-modal.css" rel="stylesheet">
+<!-- search scripts -->
+<script>
+    var base_url = "..",
+    shortcuts = "{}";
+</script>
+<script src="../js/jquery/jquery-1.10.1.min.js" defer></script>
+<script src="../js/bootstrap/bootstrap.min.js" defer></script>
+<script src="../js/mkdocs/base.js" defer></script>
+    
+    
+    
+    
+    <script src="../search/main.js"></script>
+    
+
+    
+</head>
+
+<body class="terminal"><div class="container">
+    <div class="terminal-nav">
+        <header class="terminal-logo">
+            <div id="mkdocs-terminal-site-name" class="logo terminal-prompt"><a href="https://tandukuda.github.io/SceneShift/" class="no-style">SceneShift</a></div>
+        </header>
+        
+        <nav class="terminal-menu">
+            
+            <ul vocab="https://schema.org/" typeof="BreadcrumbList">
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href=".." class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Home</span>
+                    </a>
+                    <meta property="position" content="0">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../installation/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Getting Started</span>
+                    </a>
+                    <meta property="position" content="1">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../usage/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Usage</span>
+                    </a>
+                    <meta property="position" content="2">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../safety/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Safety & Disclaimer</span>
+                    </a>
+                    <meta property="position" content="3">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="./" class="menu-item active" property="item" typeof="WebPage">
+                        <span property="name">Troubleshooting</span>
+                    </a>
+                    <meta property="position" content="4">
+                </li>
+                
+                    
+                    
+                    
+            </ul>
+            
+        </nav>
+    </div>
+</div>
+        
+    <div class="container">
+        <div class="terminal-mkdocs-main-grid"><aside id="terminal-mkdocs-side-panel"><nav>
+    <ul class="terminal-mkdocs-side-nav-items">
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="..">Home</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../installation/">Getting Started</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../usage/">Usage</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../safety/">Safety & Disclaimer</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        <span class="terminal-mkdocs-side-nav-item--active">Troubleshooting</span>
+    
+    
+    
+       </li>
+        
+    </ul>
+</nav><hr>
+<nav>
+    <ul>
+        <li><a href="#troubleshooting-guide">Troubleshooting Guide</a></li>
+        <li><a href="#general-issues">General Issues</a></li><li><a href="#process-management-issues">Process Management Issues</a></li><li><a href="#interface-issues">Interface Issues</a></li><li><a href="#feature-specific-issues">Feature-Specific Issues</a></li><li><a href="#performance-issues">Performance Issues</a></li><li><a href="#getting-additional-help">Getting Additional Help</a></li>
+    </ul>
+</nav>
+</aside>
+            <main id="terminal-mkdocs-main-content">
+<section id="mkdocs-terminal-content">
+    <h1 id="troubleshooting-guide">Troubleshooting Guide</h1>
+<p>This guide covers common issues and their solutions when using SceneShift.</p>
+<h2 id="general-issues">General Issues</h2>
+<h3 id="sceneshift-wont-start">SceneShift Won't Start</h3>
+<p><strong>Symptom</strong>: Double-clicking the executable does nothing or shows an error.</p>
+<p><strong>Common Causes and Solutions</strong>:</p>
+<ol>
+<li><strong>Not running as Administrator</strong></li>
+<li>Right-click SceneShift.exe</li>
+<li>Select "Run as administrator"</li>
+<li>
+<p>Configure your shortcut to always run as admin (see Installation guide)</p>
+</li>
+<li>
+<p><strong>Missing dependencies</strong></p>
+</li>
+<li>Install Visual C++ Redistributable (x64)</li>
+<li>Download from Microsoft's website</li>
+<li>
+<p>Restart computer after installation</p>
+</li>
+<li>
+<p><strong>Antivirus blocking execution</strong></p>
+</li>
+<li>Check your antivirus quarantine</li>
+<li>Add SceneShift.exe to the exclusion list</li>
+<li>
+<p>Unsigned executables may trigger false positives</p>
+</li>
+<li>
+<p><strong>Corrupted download</strong></p>
+</li>
+<li>Re-download the executable</li>
+<li>Verify file size matches the release page</li>
+<li>Extract again if using zip file</li>
+</ol>
+<h3 id="configuration-file-errors">Configuration File Errors</h3>
+<p><strong>Symptom</strong>: Error message about config.yaml on startup.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Corrupted configuration</strong></li>
+<li>Delete config.yaml</li>
+<li>SceneShift will regenerate it on next launch</li>
+<li>
+<p>Your apps and presets will be lost (back up config.yaml regularly)</p>
+</li>
+<li>
+<p><strong>Invalid YAML syntax</strong></p>
+</li>
+<li>Open config.yaml in a text editor</li>
+<li>Check for proper indentation (use spaces, not tabs)</li>
+<li>Ensure colons have a space after them</li>
+<li>
+<p>Verify quotes are balanced</p>
+</li>
+<li>
+<p><strong>Permission issues</strong></p>
+</li>
+<li>Ensure SceneShift folder is not in a protected location</li>
+<li>Move to Documents folder if in Program Files</li>
+<li>Check folder permissions allow write access</li>
+</ol>
+<h2 id="process-management-issues">Process Management Issues</h2>
+<h3 id="process-wont-terminate">Process Won't Terminate</h3>
+<p><strong>Symptom</strong>: Attempting to kill a process shows an error or does nothing.</p>
+<p><strong>Common Causes</strong>:</p>
+<ol>
+<li><strong>Process is protected</strong></li>
+<li>Check for shield icon next to process name</li>
+<li>Protected processes cannot be terminated for safety</li>
+<li>
+<p>Remove from exclusion list only if you understand the risk</p>
+</li>
+<li>
+<p><strong>Insufficient privileges</strong></p>
+</li>
+<li>Verify SceneShift is running as Administrator</li>
+<li>Some system services require additional permissions</li>
+<li>
+<p>Try suspend mode instead of kill mode</p>
+</li>
+<li>
+<p><strong>Process name mismatch</strong></p>
+</li>
+<li>Verify the process name exactly matches Task Manager</li>
+<li>Process names are case-insensitive but must be spelled correctly</li>
+<li>
+<p>Some apps have multiple processes (check all variants)</p>
+</li>
+<li>
+<p><strong>Protected by another application</strong></p>
+</li>
+<li>Antivirus software may protect certain processes</li>
+<li>Game anti-cheat systems prevent process termination</li>
+<li>Temporarily disable protection to manage these processes</li>
+</ol>
+<h3 id="suspend-operation-fails">Suspend Operation Fails</h3>
+<p><strong>Symptom</strong>: Attempting to suspend a process shows an error.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Modern Windows app (UWP)</strong></li>
+<li>UWP apps cannot be suspended by third-party tools</li>
+<li>These apps use different process architecture</li>
+<li>
+<p>Use kill mode instead for UWP applications</p>
+</li>
+<li>
+<p><strong>System service</strong></p>
+</li>
+<li>Windows services require special handling</li>
+<li>SceneShift cannot suspend most system services</li>
+<li>
+<p>Check if process is in exclusion list</p>
+</li>
+<li>
+<p><strong>Already suspended</strong></p>
+</li>
+<li>Check status indicator</li>
+<li>If already showing suspended, no action needed</li>
+<li>Use resume mode to unsuspend first</li>
+</ol>
+<h3 id="resume-operation-fails">Resume Operation Fails</h3>
+<p><strong>Symptom</strong>: Resume doesn't work or resumes wrong instance.</p>
+<p><strong>Common Causes</strong>:</p>
+<ol>
+<li><strong>Process no longer exists</strong></li>
+<li>Original process may have been terminated</li>
+<li>Windows may have reused the Process ID</li>
+<li>
+<p>SceneShift validates PID before resuming</p>
+</li>
+<li>
+<p><strong>Multiple instances running</strong></p>
+</li>
+<li>SceneShift tracks specific PIDs</li>
+<li>Newly launched instances won't be affected</li>
+<li>
+<p>This is intentional behavior to prevent mistakes</p>
+</li>
+<li>
+<p><strong>Process already running</strong></p>
+</li>
+<li>Check status indicator</li>
+<li>If showing running, already resumed</li>
+<li>May need to suspend again first</li>
+</ol>
+<h3 id="restore-operation-fails">Restore Operation Fails</h3>
+<p><strong>Symptom</strong>: Applications don't launch when restored.</p>
+<p><strong>Common Causes</strong>:</p>
+<ol>
+<li><strong>Executable moved or deleted</strong></li>
+<li>Verify the executable path in app configuration</li>
+<li>Edit the app entry and update the path</li>
+<li>
+<p>Use Ctrl+F to search for the current location</p>
+</li>
+<li>
+<p><strong>Insufficient permissions</strong></p>
+</li>
+<li>Some applications require specific user context</li>
+<li>Try running SceneShift as the user who installed the app</li>
+<li>
+<p>Administrator privileges may not be enough for some apps</p>
+</li>
+<li>
+<p><strong>Application requires specific launch arguments</strong></p>
+</li>
+<li>SceneShift launches without arguments</li>
+<li>Add a launcher script if arguments are needed</li>
+<li>
+<p>Point the executable path to the script</p>
+</li>
+<li>
+<p><strong>Application prevents multiple instances</strong></p>
+</li>
+<li>Some apps only allow one running instance</li>
+<li>If already running, restore will fail</li>
+<li>Check Task Manager before attempting restore</li>
+</ol>
+<h2 id="interface-issues">Interface Issues</h2>
+<h3 id="text-appears-garbled-or-unreadable">Text Appears Garbled or Unreadable</h3>
+<p><strong>Symptom</strong>: Strange characters or missing text in the interface.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Terminal encoding issue</strong></li>
+<li>Run SceneShift in Windows Terminal instead of CMD</li>
+<li>Windows Terminal has better Unicode support</li>
+<li>
+<p>PowerShell also provides better rendering</p>
+</li>
+<li>
+<p><strong>Font doesn't support icons</strong></p>
+</li>
+<li>Install a font with icon support (Cascadia Code, Fira Code)</li>
+<li>Configure your terminal to use the new font</li>
+<li>
+<p>Restart SceneShift after font installation</p>
+</li>
+<li>
+<p><strong>Console window too small</strong></p>
+</li>
+<li>Maximize the terminal window</li>
+<li>SceneShift requires minimum 80x24 character display</li>
+<li>Resize manually if auto-resize doesn't work</li>
+</ol>
+<h3 id="colors-dont-display-correctly">Colors Don't Display Correctly</h3>
+<p><strong>Symptom</strong>: All text appears in the same color or colors are wrong.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Terminal doesn't support colors</strong></li>
+<li>Use Windows Terminal or PowerShell</li>
+<li>CMD has limited color support</li>
+<li>
+<p>Consider switching terminals for better experience</p>
+</li>
+<li>
+<p><strong>Theme issue</strong></p>
+</li>
+<li>Press 't' to change theme</li>
+<li>Try a different theme to verify</li>
+<li>Check theme.yaml for corrupted values</li>
+</ol>
+<h3 id="ui-updates-slowly-or-freezes">UI Updates Slowly or Freezes</h3>
+<p><strong>Symptom</strong>: Interface is unresponsive or laggy.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Too many processes tracked</strong></li>
+<li>SceneShift updates stats for all apps</li>
+<li>Reduce number of configured apps</li>
+<li>
+<p>Stats are cached but updates still consume resources</p>
+</li>
+<li>
+<p><strong>Terminal performance</strong></p>
+</li>
+<li>Windows Terminal generally performs better than CMD</li>
+<li>Try a different terminal emulator</li>
+<li>
+<p>Close other terminal sessions</p>
+</li>
+<li>
+<p><strong>Background CPU usage</strong></p>
+</li>
+<li>Other applications may be consuming resources</li>
+<li>Check Task Manager for CPU bottlenecks</li>
+<li>Close unnecessary background apps</li>
+</ol>
+<h2 id="feature-specific-issues">Feature-Specific Issues</h2>
+<h3 id="presets-dont-work">Presets Don't Work</h3>
+<p><strong>Symptom</strong>: Pressing preset hotkey does nothing or selects wrong apps.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Hotkey conflict</strong></li>
+<li>Verify hotkey doesn't conflict with existing keybindings</li>
+<li>Use single character or number</li>
+<li>
+<p>Avoid keys used by Windows or terminal</p>
+</li>
+<li>
+<p><strong>App names don't match</strong></p>
+</li>
+<li>Preset uses app names, not process names</li>
+<li>Check spelling in preset configuration</li>
+<li>
+<p>Names are case-sensitive in config.yaml</p>
+</li>
+<li>
+<p><strong>Preset not saved</strong></p>
+</li>
+<li>Verify preset appears in preset manager</li>
+<li>Check config.yaml contains the preset</li>
+<li>Try recreating the preset</li>
+</ol>
+<h3 id="import-configuration-fails">Import Configuration Fails</h3>
+<p><strong>Symptom</strong>: Attempting to import a profile shows an error.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Invalid JSON file</strong></li>
+<li>Verify file is valid JSON</li>
+<li>Use a JSON validator online</li>
+<li>
+<p>Check for syntax errors in the file</p>
+</li>
+<li>
+<p><strong>Version incompatibility</strong></p>
+</li>
+<li>Profile may be from newer SceneShift version</li>
+<li>Update SceneShift to latest version</li>
+<li>
+<p>Check metadata.sceneshift_version in profile</p>
+</li>
+<li>
+<p><strong>File not found</strong></p>
+</li>
+<li>Ensure profile file is in SceneShift directory</li>
+<li>Check filename matches exactly (case-sensitive)</li>
+<li>
+<p>Verify file wasn't moved or deleted</p>
+</li>
+<li>
+<p><strong>No profiles in list</strong></p>
+</li>
+<li>Files must be named sceneshift-profile-*.json</li>
+<li>Check file extensions are .json not .txt</li>
+<li>Export a test profile to verify filename format</li>
+</ol>
+<h3 id="undo-doesnt-work">Undo Doesn't Work</h3>
+<p><strong>Symptom</strong>: Undo operation fails or shows error.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Nothing to undo</strong></li>
+<li>Undo only works for most recent operation</li>
+<li>History is cleared when SceneShift exits</li>
+<li>
+<p>Verify an operation was actually performed</p>
+</li>
+<li>
+<p><strong>Executable paths missing</strong></p>
+</li>
+<li>Undo kill requires valid executable paths</li>
+<li>Edit app configurations to add missing paths</li>
+<li>
+<p>Cannot restore apps without path information</p>
+</li>
+<li>
+<p><strong>Processes no longer exist</strong></p>
+</li>
+<li>Undo suspend requires original PIDs to exist</li>
+<li>If processes were terminated externally, undo fails</li>
+<li>This is expected behavior</li>
+</ol>
+<h3 id="session-history-empty">Session History Empty</h3>
+<p><strong>Symptom</strong>: Pressing 'h' shows no history.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>No operations performed</strong></li>
+<li>History only tracks kill/suspend/resume/restore</li>
+<li>App management doesn't create history entries</li>
+<li>
+<p>Perform an operation to populate history</p>
+</li>
+<li>
+<p><strong>History cleared on exit</strong></p>
+</li>
+<li>Session history is not persistent</li>
+<li>Intentional behavior to keep memory usage low</li>
+<li>Export logs if you need permanent record</li>
+</ol>
+<h2 id="performance-issues">Performance Issues</h2>
+<h3 id="high-cpu-usage">High CPU Usage</h3>
+<p><strong>Symptom</strong>: SceneShift itself consumes significant CPU.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Stats collection overhead</strong></li>
+<li>Stats update in background</li>
+<li>Cached for 2 seconds to minimize impact</li>
+<li>
+<p>Consider reducing number of tracked apps</p>
+</li>
+<li>
+<p><strong>Large process list</strong></p>
+</li>
+<li>SceneShift enumerates all processes periodically</li>
+<li>This is normal behavior</li>
+<li>CPU usage should be &lt; 5% when idle</li>
+</ol>
+<h3 id="high-memory-usage">High Memory Usage</h3>
+<p><strong>Symptom</strong>: SceneShift uses more RAM than expected.</p>
+<p><strong>Solutions</strong>:</p>
+<ol>
+<li><strong>Large configuration</strong></li>
+<li>Many apps and presets increase memory use</li>
+<li>This is normal and generally under 50 MB</li>
+<li>
+<p>Not significant compared to other applications</p>
+</li>
+<li>
+<p><strong>Memory leak</strong></p>
+</li>
+<li>Restart SceneShift to clear</li>
+<li>Report issue on GitHub if it persists</li>
+<li>Monitor memory over time to verify</li>
+</ol>
+<h2 id="getting-additional-help">Getting Additional Help</h2>
+<p>If your issue is not covered here:</p>
+<ol>
+<li>Check the <a href="https://github.com/tandukuda/SceneShift/issues">GitHub Issues</a> page</li>
+<li>Search for similar problems</li>
+<li>Create a new issue with:</li>
+<li>SceneShift version</li>
+<li>Windows version</li>
+<li>Detailed description of the problem</li>
+<li>Steps to reproduce</li>
+<li>Error messages or screenshots</li>
+</ol>
+<p>For configuration help, see the Configuration Guide in the documentation.</p>
+<p>For general usage questions, see the Usage Guide.</p>
+</section>
+
+            </main>
+        </div>
+        <hr><footer>
+    <div class="terminal-mkdocs-footer-grid">
+        <div id="terminal-mkdocs-footer-copyright-info">
+             Site built with <a href="http://www.mkdocs.org">MkDocs</a> and <a href="https://github.com/ntno/mkdocs-terminal">Terminal for MkDocs</a>.
+        </div>
+    </div>
+</footer>
+    </div>
+
+    
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="alertdialog" aria-modal="true" aria-labelledby="searchModalLabel">
+    <div class="modal-dialog modal-lg" role="search">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="searchModalLabel">Search</h5>
+                <button type="button" class="close btn btn-default btn-ghost" data-dismiss="modal" aria-label="Close">x</button>
+            </div>
+            <div class="modal-body">
+                <p id="searchInputLabel">Type to start searching</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" aria-labelledby="searchInputLabel" placeholder="" id="mkdocs-search-query" title="Please enter search terms here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No document matches found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+</body>
+
+</html>
