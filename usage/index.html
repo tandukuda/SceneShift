@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="generator" content="mkdocs-1.6.1, mkdocs-terminal-4.8.0">
+     
+     
+    
+    <link rel="canonical" href="https://tandukuda.github.io/SceneShift/usage/"><link rel="icon" type="image/png" sizes="192x192" href="../img/android-chrome-192x192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="../img/android-chrome-512x512.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="../img/apple-touch-icon.png" />
+<link rel="shortcut icon" type="image/png" sizes="48x48" href="../img/favicon.ico" />
+<link rel="icon" type="image/png" sizes="16x16" href="../img/favicon-16x16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="../img/favicon-32x32.png" />
+
+
+    
+ 
+<title>Usage - SceneShift</title>
+
+
+<link href="../css/fontawesome/css/fontawesome.min.css" rel="stylesheet">
+<link href="../css/fontawesome/css/solid.min.css" rel="stylesheet">
+<link href="../css/normalize.css" rel="stylesheet">
+<link href="../css/terminal.css" rel="stylesheet">
+<link href="../css/theme.css" rel="stylesheet">
+<link href="../css/theme.tile_grid.css" rel="stylesheet">
+<link href="../css/theme.footer.css" rel="stylesheet">
+<!-- dark color palette -->
+<link href="../css/palettes/dark.css" rel="stylesheet">
+
+<!-- page layout -->
+<style>
+/* initially set page layout to a one column grid */
+.terminal-mkdocs-main-grid {
+    display: grid;
+    grid-column-gap: 1.4em;
+    grid-template-columns: auto;
+    grid-template-rows: auto;
+}
+
+/*  
+*   when side navigation is not hidden, use a two column grid.  
+*   if the screen is too narrow, fall back to the initial one column grid layout.
+*   in this case the main content will be placed under the navigation panel. 
+*/
+@media only screen and (min-width: 70em) {
+    .terminal-mkdocs-main-grid {
+        grid-template-columns: 4fr 9fr;
+    }
+}</style>
+
+
+
+     
+    
+    
+
+    
+    <!-- search css support -->
+<link href="../css/search/bootstrap-modal.css" rel="stylesheet">
+<!-- search scripts -->
+<script>
+    var base_url = "..",
+    shortcuts = "{}";
+</script>
+<script src="../js/jquery/jquery-1.10.1.min.js" defer></script>
+<script src="../js/bootstrap/bootstrap.min.js" defer></script>
+<script src="../js/mkdocs/base.js" defer></script>
+    
+    
+    
+    
+    <script src="../search/main.js"></script>
+    
+
+    
+</head>
+
+<body class="terminal"><div class="container">
+    <div class="terminal-nav">
+        <header class="terminal-logo">
+            <div id="mkdocs-terminal-site-name" class="logo terminal-prompt"><a href="https://tandukuda.github.io/SceneShift/" class="no-style">SceneShift</a></div>
+        </header>
+        
+        <nav class="terminal-menu">
+            
+            <ul vocab="https://schema.org/" typeof="BreadcrumbList">
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href=".." class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Home</span>
+                    </a>
+                    <meta property="position" content="0">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../installation/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Getting Started</span>
+                    </a>
+                    <meta property="position" content="1">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="./" class="menu-item active" property="item" typeof="WebPage">
+                        <span property="name">Usage</span>
+                    </a>
+                    <meta property="position" content="2">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../safety/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Safety & Disclaimer</span>
+                    </a>
+                    <meta property="position" content="3">
+                </li>
+                
+                
+                <li property="itemListElement" typeof="ListItem">
+                    <a href="../troubleshooting/" class="menu-item " property="item" typeof="WebPage">
+                        <span property="name">Troubleshooting</span>
+                    </a>
+                    <meta property="position" content="4">
+                </li>
+                
+                    
+                    
+                    
+            </ul>
+            
+        </nav>
+    </div>
+</div>
+        
+    <div class="container">
+        <div class="terminal-mkdocs-main-grid"><aside id="terminal-mkdocs-side-panel"><nav>
+    <ul class="terminal-mkdocs-side-nav-items">
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="..">Home</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../installation/">Getting Started</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        <span class="terminal-mkdocs-side-nav-item--active">Usage</span>
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../safety/">Safety & Disclaimer</a>
+        
+    
+    
+    
+       </li>
+        
+          <li class="terminal-mkdocs-side-nav-li">
+    
+    
+    
+        
+        
+            <a class="terminal-mkdocs-side-nav-item" href="../troubleshooting/">Troubleshooting</a>
+        
+    
+    
+    
+       </li>
+        
+    </ul>
+</nav><hr>
+<nav>
+    <ul>
+        <li><a href="#usage-guide">Usage Guide</a></li>
+        <li><a href="#basic-commands">Basic Commands</a></li><li><a href="#navigation">Navigation</a></li><li><a href="#process-management">Process Management</a></li><li><a href="#application-management">Application Management</a></li><li><a href="#presets">Presets</a></li><li><a href="#session-history-and-undo">Session History and Undo</a></li><li><a href="#configuration-profiles">Configuration Profiles</a></li><li><a href="#themes">Themes</a></li><li><a href="#safety-features">Safety Features</a></li><li><a href="#process-information">Process Information</a></li><li><a href="#keyboard-reference">Keyboard Reference</a></li><li><a href="#tips-and-best-practices">Tips and Best Practices</a></li>
+    </ul>
+</nav>
+</aside>
+            <main id="terminal-mkdocs-main-content">
+<section id="mkdocs-terminal-content">
+    <h1 id="usage-guide">Usage Guide</h1>
+<p>SceneShift is designed for keyboard-driven operation. All functionality can be accessed without using a mouse.</p>
+<h2 id="basic-commands">Basic Commands</h2>
+<h3 id="running-sceneshift">Running SceneShift</h3>
+<pre><code class="language-powershell"># Launch the application
+SceneShift.exe
+
+# Show version information
+SceneShift.exe --version
+
+# Display help message
+SceneShift.exe --help
+</code></pre>
+<p>Administrator privileges are required for all operations.</p>
+<h2 id="navigation">Navigation</h2>
+<h3 id="main-menu">Main Menu</h3>
+<ul>
+<li>Up Arrow or 'k': Move cursor up</li>
+<li>Down Arrow or 'j': Move cursor down</li>
+<li>Spacebar: Toggle selection on current item</li>
+<li>'a': Select all items</li>
+<li>'x': Deselect all items</li>
+</ul>
+<h3 id="other-screens">Other Screens</h3>
+<p>Most interfaces support arrow key navigation. Press Escape to return to the previous screen.</p>
+<h2 id="process-management">Process Management</h2>
+<h3 id="kill-mode">Kill Mode</h3>
+<p>Permanently terminates selected processes.</p>
+<ol>
+<li>Select applications in the main menu</li>
+<li>Press 'K'</li>
+<li>Review the countdown screen</li>
+<li>Press 'q' to cancel or wait for execution</li>
+<li>View results showing which processes were terminated</li>
+</ol>
+<p>RAM reclaimed is displayed after the operation completes.</p>
+<h3 id="suspend-mode">Suspend Mode</h3>
+<p>Freezes process threads without terminating the application.</p>
+<ol>
+<li>Select applications in the main menu</li>
+<li>Press 'S'</li>
+<li>Confirm during countdown</li>
+<li>Processes are frozen in place</li>
+</ol>
+<p>Suspended processes show a pause indicator in the status column. They consume RAM but use minimal CPU.</p>
+<h3 id="resume-mode">Resume Mode</h3>
+<p>Unfreezes previously suspended processes.</p>
+<ol>
+<li>Navigate to applications showing suspended status</li>
+<li>Press 'U'</li>
+<li>Confirm during countdown</li>
+<li>Processes continue execution</li>
+</ol>
+<p>Only processes suspended by SceneShift can be resumed. The application tracks specific Process IDs to ensure accuracy.</p>
+<h3 id="restore-mode">Restore Mode</h3>
+<p>Relaunches terminated applications.</p>
+<ol>
+<li>Select terminated applications</li>
+<li>Press 'R'</li>
+<li>Confirm during countdown</li>
+<li>Applications start using stored executable paths</li>
+</ol>
+<p>If an executable has been moved or deleted, the restore operation will fail for that application.</p>
+<h2 id="application-management">Application Management</h2>
+<h3 id="adding-applications">Adding Applications</h3>
+<ol>
+<li>Press 'n' in the main menu</li>
+<li>Enter application name</li>
+<li>Enter process name (e.g., Discord.exe)</li>
+<li>Enter full executable path</li>
+<li>Press Enter to save</li>
+</ol>
+<p>Alternatively, press Ctrl+F to search running processes and auto-populate the fields.</p>
+<h3 id="editing-applications">Editing Applications</h3>
+<ol>
+<li>Navigate to the application</li>
+<li>Press 'e'</li>
+<li>Modify fields as needed</li>
+<li>Press Enter to save</li>
+</ol>
+<h3 id="deleting-applications">Deleting Applications</h3>
+<ol>
+<li>Navigate to the application</li>
+<li>Press 'd'</li>
+<li>The application is removed immediately</li>
+</ol>
+<h2 id="presets">Presets</h2>
+<p>Presets allow you to define groups of applications that can be activated with a single keypress.</p>
+<h3 id="creating-a-preset">Creating a Preset</h3>
+<ol>
+<li>Press 'p' to open preset manager</li>
+<li>Press 'n' to create new preset</li>
+<li>Enter preset name</li>
+<li>Assign a single-key trigger (e.g., '1', '2', 'g')</li>
+<li>Press Ctrl+F to select applications or type comma-separated names</li>
+<li>Press Enter to save</li>
+</ol>
+<h3 id="using-presets">Using Presets</h3>
+<p>In the main menu, press the assigned hotkey to activate the preset. All applications in that preset are automatically selected.</p>
+<h3 id="managing-presets">Managing Presets</h3>
+<ul>
+<li>Press 'e' to edit an existing preset</li>
+<li>Press 'd' to delete a preset</li>
+<li>Press Escape to return to main menu</li>
+</ul>
+<h2 id="session-history-and-undo">Session History and Undo</h2>
+<h3 id="viewing-history">Viewing History</h3>
+<ol>
+<li>Press 'h' in the main menu</li>
+<li>Review operations performed this session</li>
+<li>Navigate with arrow keys</li>
+<li>Press Escape to return</li>
+</ol>
+<p>History includes timestamps and details about which applications were affected.</p>
+<h3 id="undoing-operations">Undoing Operations</h3>
+<ol>
+<li>Press 'u' or Ctrl+Z in the main menu</li>
+<li>Review the confirmation screen</li>
+<li>Press Enter to execute undo or Escape to cancel</li>
+</ol>
+<p>Undo reverses the most recent operation:
+- Undo Kill: Restores terminated applications
+- Undo Suspend: Resumes suspended processes
+- Undo Resume: Re-suspends processes
+- Undo Restore: Terminates launched applications</p>
+<h2 id="configuration-profiles">Configuration Profiles</h2>
+<h3 id="exporting-configuration">Exporting Configuration</h3>
+<ol>
+<li>Press Ctrl+E in the main menu</li>
+<li>Enter a description for this configuration</li>
+<li>Optionally enter your name as author</li>
+<li>Press Enter</li>
+<li>Profile saved as sceneshift-profile-YYYY-MM-DD.json</li>
+</ol>
+<h3 id="importing-configuration">Importing Configuration</h3>
+<ol>
+<li>Press 'i' in the main menu</li>
+<li>Select a profile from the list using arrow keys</li>
+<li>Press Enter to import</li>
+</ol>
+<p>Import merges the selected profile with your current configuration. Existing apps and presets are preserved. If you want to replace your entire configuration, manually delete your config.yaml first.</p>
+<h2 id="themes">Themes</h2>
+<h3 id="changing-themes">Changing Themes</h3>
+<ol>
+<li>Press 't' in the main menu</li>
+<li>Navigate through available themes</li>
+<li>Theme previews in real-time</li>
+<li>Press Enter to apply</li>
+<li>Press Escape to return without changing</li>
+</ol>
+<h3 id="customizing-themes">Customizing Themes</h3>
+<ol>
+<li>In the theme selector, press 'e'</li>
+<li>Modify color hex codes</li>
+<li>Changes preview immediately</li>
+<li>Press Enter to save as custom theme</li>
+<li>Press Escape to discard changes</li>
+</ol>
+<h2 id="safety-features">Safety Features</h2>
+<h3 id="exclusion-list">Exclusion List</h3>
+<p>The exclusion list contains processes that cannot be killed or suspended. This prevents accidental termination of critical Windows components.</p>
+<ol>
+<li>Press 'w' to open exclusion list manager</li>
+<li>Review protected processes</li>
+<li>Type process name and press Enter to add</li>
+<li>Navigate to a process and press 'd' to remove</li>
+</ol>
+<p>Default exclusions include explorer.exe, dwm.exe, and other essential Windows processes.</p>
+<h3 id="safety-indicators">Safety Indicators</h3>
+<p>Each application shows a safety indicator:
+- Shield icon: Protected (cannot be modified)
+- Checkmark: Safe to kill
+- Warning sign: Use caution</p>
+<p>These indicators help you make informed decisions about which processes to manage.</p>
+<h2 id="process-information">Process Information</h2>
+<p>The main menu displays real-time information for each application:
+- Status indicator (running, suspended, or not found)
+- Safety level
+- CPU usage percentage
+- RAM consumption in megabytes</p>
+<p>This information updates automatically while the interface is active.</p>
+<h2 id="keyboard-reference">Keyboard Reference</h2>
+<h3 id="main-menu-actions">Main Menu Actions</h3>
+<ul>
+<li>'K': Kill selected processes</li>
+<li>'S': Suspend selected processes</li>
+<li>'U': Resume suspended processes</li>
+<li>'R': Restore terminated processes</li>
+</ul>
+<h3 id="management">Management</h3>
+<ul>
+<li>'n': New application</li>
+<li>'e': Edit application</li>
+<li>'d': Delete application</li>
+<li>'p': Manage presets</li>
+<li>'t': Change theme</li>
+<li>'w': Manage exclusion list</li>
+</ul>
+<h3 id="advanced-features">Advanced Features</h3>
+<ul>
+<li>'h': View session history</li>
+<li>'u' or Ctrl+Z: Undo last operation</li>
+<li>Ctrl+E: Export configuration</li>
+<li>'i': Import configuration</li>
+<li>'?': Toggle help display</li>
+<li>'q': Quit application</li>
+</ul>
+<h3 id="preset-triggers">Preset Triggers</h3>
+<p>Press any configured preset hotkey (1-9, letters) to activate that preset.</p>
+<h2 id="tips-and-best-practices">Tips and Best Practices</h2>
+<h3 id="before-critical-tasks">Before Critical Tasks</h3>
+<p>Test your presets in low-risk situations before relying on them for important work.</p>
+<h3 id="regular-backups">Regular Backups</h3>
+<p>Export your configuration periodically to preserve your optimized setup.</p>
+<h3 id="reviewing-changes">Reviewing Changes</h3>
+<p>Use session history to verify what operations were performed if unexpected behavior occurs.</p>
+<h3 id="suspension-vs-termination">Suspension vs Termination</h3>
+<p>Use suspend mode when you want to preserve application state. Use kill mode when you need maximum resource reclamation.</p>
+<h3 id="resource-monitoring">Resource Monitoring</h3>
+<p>Check the CPU and RAM columns to identify which applications are consuming the most resources before deciding what to manage.</p>
+</section>
+
+            </main>
+        </div>
+        <hr><footer>
+    <div class="terminal-mkdocs-footer-grid">
+        <div id="terminal-mkdocs-footer-copyright-info">
+             Site built with <a href="http://www.mkdocs.org">MkDocs</a> and <a href="https://github.com/ntno/mkdocs-terminal">Terminal for MkDocs</a>.
+        </div>
+    </div>
+</footer>
+    </div>
+
+    
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="alertdialog" aria-modal="true" aria-labelledby="searchModalLabel">
+    <div class="modal-dialog modal-lg" role="search">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="searchModalLabel">Search</h5>
+                <button type="button" class="close btn btn-default btn-ghost" data-dismiss="modal" aria-label="Close">x</button>
+            </div>
+            <div class="modal-body">
+                <p id="searchInputLabel">Type to start searching</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" aria-labelledby="searchInputLabel" placeholder="" id="mkdocs-search-query" title="Please enter search terms here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No document matches found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+    
+    
+</body>
+
+</html>
