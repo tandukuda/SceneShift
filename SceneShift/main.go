@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -9,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"unicode"
 	"sync"
 	"syscall"
 	"time"
@@ -26,7 +29,7 @@ import (
 )
 
 var (
-	Version   = "2.1.1"
+	Version   = "2.2.0"
 	BuildDate = "unknown"
 	GitCommit = "unknown"
 )
@@ -39,6 +42,8 @@ var (
 	procCloseHandle      = kernel32.NewProc("CloseHandle")
 	procNtSuspendProcess = ntdll.NewProc("NtSuspendProcess")
 	procNtResumeProcess  = ntdll.NewProc("NtResumeProcess")
+	shell32              = syscall.NewLazyDLL("shell32.dll")
+	procIsUserAnAdmin    = shell32.NewProc("IsUserAnAdmin")
 )
 
 const (
@@ -48,7 +53,6 @@ const (
 
 func openProcess(pid int32) (syscall.Handle, error) {
 	handle, _, err := procOpenProcess.Call(
-		uintptr(PROCESS_SUSPEND_RESUME|PROCESS_QUERY_INFORMATION),
 		0,
 		uintptr(pid),
 	)
@@ -1049,126 +1053,111 @@ func (m *model) executeUndo() tea.Cmd {
 		return nil
 	}
 
-	// Perform undo immediately (not as a command)
-	var msgs []string
-	successCount := 0
-	failCount := 0
-
-	msgs = append(msgs, fmt.Sprintf("Undoing %s operation...", entry.Operation.String()))
-
-	switch entry.Operation {
-	case OpKill:
-		// Undo kill = restore processes
-		for _, app := range entry.Apps {
-			if app.ExecPath == "" {
-				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No executable path", app.Name))
-				failCount++
-				continue
-			}
-
-			cmd := exec.Command(app.ExecPath)
-			if err := cmd.Start(); err != nil {
-				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
-				failCount++
-			} else {
-				msgs = append(msgs, fmt.Sprintf("[OK]   Restored %s", app.Name))
-				successCount++
-			}
-		}
-
-	case OpSuspend:
-		// Undo suspend = resume processes
-		for _, app := range entry.Apps {
-			if len(app.PIDs) == 0 {
-				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No PIDs recorded", app.Name))
-				failCount++
-				continue
-			}
-
-			resumed := 0
-			for _, pid := range app.PIDs {
-				if pidExists(pid) {
-					if err := resumeProcess(pid); err == nil {
-						resumed++
-					}
-				}
-			}
-
-			if resumed > 0 {
-				msgs = append(msgs, fmt.Sprintf("[OK]   Resumed %s (%d processes)", app.Name, resumed))
-				successCount++
-
-				// Clear PIDs from config
-				for i := range m.config.Apps {
-					if m.config.Apps[i].Name == app.Name {
-						for _, pid := range app.PIDs {
-							delete(m.config.Apps[i].PIDs, pid)
-						}
-						break
-					}
-				}
-			} else {
-				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: No valid PIDs found", app.Name))
-				failCount++
-			}
-		}
-
-	case OpResume:
-		// Undo resume = re-suspend processes
-		for _, app := range entry.Apps {
-			appRef := m.findAppByName(app.Name)
-			if appRef == nil {
-				msgs = append(msgs, fmt.Sprintf("[SKIP] %s: Not found in config", app.Name))
-				failCount++
-				continue
-			}
-
-			if err := suspendProcessByName(appRef.ProcessName, appRef); err != nil {
-				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
-				failCount++
-			} else {
-				msgs = append(msgs, fmt.Sprintf("[OK]   Re-suspended %s", app.Name))
-				successCount++
-			}
-		}
-
-	case OpRestore:
-		// Undo restore = kill processes
-		for _, app := range entry.Apps {
-			procs, _ := process.Processes()
-			killed := false
-			for _, p := range procs {
-				name, _ := p.Name()
-				if strings.EqualFold(name, app.ProcessName) {
-					p.Kill()
-					killed = true
-				}
-			}
-			if killed {
-				msgs = append(msgs, fmt.Sprintf("[OK]   Killed %s", app.Name))
-				successCount++
-			} else {
-				msgs = append(msgs, fmt.Sprintf("[ERR]  %s: Not running", app.Name))
-				failCount++
-			}
-		}
-	}
-
-	// Remove this entry from history after undo
+	// Remove this entry from history immediately to prevent duplicate triggers
 	if len(m.history.Entries) > 0 {
 		m.history.Entries = m.history.Entries[:len(m.history.Entries)-1]
 	}
 
-	summary := fmt.Sprintf("Undo complete: %d succeeded, %d failed", successCount, failCount)
-	msgs = append(msgs, "", summary)
+	entryCopy := *entry
 
-	// Update model directly
-	m.logs = msgs
-	m.progPercent = 1.0
-	m.currentState = stateDone
+	return func() tea.Msg {
+		var msgs []string
+		successCount := 0
+		failCount := 0
+		newPIDs := make(map[string][]int32)
 
-	return nil
+		msgs = append(msgs, fmt.Sprintf("Undoing %s operation...", entryCopy.Operation.String()))
+
+		switch entryCopy.Operation {
+		case OpKill:
+			for _, app := range entryCopy.Apps {
+				if app.ExecPath == "" {
+					msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No executable path", app.Name))
+					failCount++
+					continue
+				}
+				cmd := exec.Command(app.ExecPath)
+				if err := cmd.Start(); err != nil {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+					failCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Restored %s", app.Name))
+					successCount++
+				}
+			}
+
+		case OpSuspend:
+			for _, app := range entryCopy.Apps {
+				if len(app.PIDs) == 0 {
+					msgs = append(msgs, fmt.Sprintf("[SKIP] %s: No PIDs recorded", app.Name))
+					failCount++
+					continue
+				}
+				resumed := 0
+				for _, pid := range app.PIDs {
+					if pidExists(pid) {
+						if err := resumeProcess(pid); err == nil {
+							resumed++
+						}
+					}
+				}
+				if resumed > 0 {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Resumed %s (%d processes)", app.Name, resumed))
+					successCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: No valid PIDs found", app.Name))
+					failCount++
+				}
+			}
+
+		case OpResume:
+			procs, _ := process.Processes()
+			for _, app := range entryCopy.Apps {
+				targets := strings.Split(app.ProcessName, ",")
+				suspended := 0
+				for _, p := range procs {
+					n, _ := p.Name()
+					for _, t := range targets {
+						if strings.EqualFold(n, strings.TrimSpace(t)) {
+							if err := suspendProcess(p.Pid); err == nil {
+								suspended++
+								newPIDs[app.Name] = append(newPIDs[app.Name], p.Pid)
+							}
+						}
+					}
+				}
+				if suspended > 0 {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Re-suspended %s", app.Name))
+					successCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: No processes found", app.Name))
+					failCount++
+				}
+			}
+
+		case OpRestore:
+			for _, app := range entryCopy.Apps {
+				if err := killProcess(app.ProcessName); err != nil {
+					msgs = append(msgs, fmt.Sprintf("[ERR]  %s: %v", app.Name, err))
+					failCount++
+				} else {
+					msgs = append(msgs, fmt.Sprintf("[OK]   Killed %s", app.Name))
+					successCount++
+				}
+			}
+		}
+
+		return undoResultMsg{
+			logs:      msgs,
+			success:   successCount,
+			failed:    failCount,
+			operation: entryCopy.Operation,
+			apps:      entryCopy.Apps,
+			newPIDs:   newPIDs,
+		}
+	}
 }
+
 
 // undoCmd performs the actual undo operation
 func (m *model) undoCmd(entry *HistoryEntry) tea.Cmd {
@@ -1389,13 +1378,40 @@ func (m *model) importProfile(filepath string, mergeMode bool) error {
 	if profile.Metadata.SceneShiftVersion > Version {
 		m.profileMessage = fmt.Sprintf("⚠️ Warning: Profile from newer version (%s)", profile.Metadata.SceneShiftVersion)
 	}
-
 	if mergeMode {
-		// Merge: Add to existing config
-		m.config.Apps = append(m.config.Apps, profile.Apps...)
-		m.config.Presets = append(m.config.Presets, profile.Presets...)
+
+		// Merge: Add to existing config, skipping duplicates
+		appsAdded := 0
+		for _, newApp := range profile.Apps {
+			exists := false
+			for _, oldApp := range m.config.Apps {
+				if strings.EqualFold(oldApp.ProcessName, newApp.ProcessName) {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				m.config.Apps = append(m.config.Apps, newApp)
+				appsAdded++
+			}
+		}
+
+		presetsAdded := 0
+		for _, newPreset := range profile.Presets {
+			exists := false
+			for _, oldPreset := range m.config.Presets {
+				if strings.EqualFold(oldPreset.Name, newPreset.Name) {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				m.config.Presets = append(m.config.Presets, newPreset)
+				presetsAdded++
+			}
+		}
 		// Don't merge theme, protection, or safe-to-kill lists
-		m.profileMessage = fmt.Sprintf("✅ Merged %d apps and %d presets", len(profile.Apps), len(profile.Presets))
+		m.profileMessage = fmt.Sprintf("✅ Merged %d apps and %d presets", appsAdded, presetsAdded)
 	} else {
 		// Replace: Overwrite existing config
 		m.config.Apps = profile.Apps
@@ -1422,7 +1438,7 @@ func fetchRunningProcesses() []list.Item {
 		path, _ := p.Exe()
 		if _, exists := uniqueMap[name]; !exists {
 			friendlyName := strings.TrimSuffix(name, filepath.Ext(name))
-			friendlyName = strings.Title(friendlyName)
+			friendlyName = toTitle(friendlyName)
 			uniqueMap[name] = processItem{name: friendlyName, exe: name, path: path}
 		}
 	}
@@ -2140,6 +2156,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, cmd
 
+	case undoResultMsg:
+		m.logs = msg.logs
+		m.progPercent = 1.0
+		m.currentState = stateDone
+		summary := fmt.Sprintf("Undo complete: %d succeeded, %d failed", msg.success, msg.failed)
+		m.logs = append(m.logs, "", summary)
+
+		switch msg.operation {
+		case OpSuspend:
+			for _, histApp := range msg.apps {
+				for i := range m.config.Apps {
+					if m.config.Apps[i].Name == histApp.Name {
+						for _, pid := range histApp.PIDs {
+							delete(m.config.Apps[i].PIDs, pid)
+						}
+						break
+					}
+				}
+			}
+		case OpResume:
+			for appName, pids := range msg.newPIDs {
+				appRef := m.findAppByName(appName)
+				if appRef != nil {
+					if appRef.PIDs == nil {
+						appRef.PIDs = make(map[int32]bool)
+					}
+					for _, pid := range pids {
+						appRef.PIDs[pid] = true
+					}
+				}
+			}
+		}
+
+		return m, m.progress.SetPercent(1.0)
+
 	case processResultMsg:
 		m.logs = append(m.logs, msg.message)
 		m.progPercent = msg.percent
@@ -2291,6 +2342,15 @@ func tickCmd() tea.Cmd {
 	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
+}
+
+type undoResultMsg struct {
+	logs      []string
+	success   int
+	failed    int
+	operation OperationType
+	apps      []AppHistoryItem
+	newPIDs   map[string][]int32
 }
 
 type processResultMsg struct {
@@ -2878,6 +2938,17 @@ func (m model) View() string {
 }
 
 func main() {
+	// Check for Administrator privileges
+	res, _, _ := procIsUserAnAdmin.Call()
+	if res == 0 {
+		fmt.Println("Error: SceneShift requires Administrator privileges to manage processes.")
+		fmt.Println("Please restart the application as Administrator.")
+		fmt.Print("\nPress Enter to exit...")
+		var input string
+		fmt.Scanln(&input)
+		os.Exit(1)
+	}
+
 	// Handle version flag
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
@@ -2944,4 +3015,13 @@ DOCUMENTATION:
     https://github.com/tandukuda/SceneShift
 
 `, Version)
+}
+
+// toTitle is a simple replacement for the deprecated strings.Title
+func toTitle(s string) string {
+	if s == "" {
+		return ""
+	}
+	r := []rune(s)
+	return string(append([]rune{unicode.ToUpper(r[0])}, r[1:]...))
 }
